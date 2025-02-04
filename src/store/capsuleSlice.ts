@@ -1,6 +1,19 @@
-import {createSlice, createAsyncThunk, PayloadAction} from '@reduxjs/toolkit';
+import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
 import {Capsule} from '../types';
-import {StorageService} from '../services/storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+export interface Capsule {
+  id: string;
+  title: string;
+  description: string;
+  content: string;
+  type: 'text' | 'image' | 'video';
+  mediaUrl?: string;
+  openDate: string;
+  createdAt: string;
+  isLocked: boolean;
+  recipientEmail?: string;
+}
 
 interface CapsuleState {
   items: Capsule[];
@@ -14,71 +27,79 @@ const initialState: CapsuleState = {
   error: null,
 };
 
-// Async thunks
-export const fetchCapsules = createAsyncThunk(
-  'capsules/fetchCapsules',
-  async () => {
-    return await StorageService.getCapsules();
-  },
-);
-
-export const addCapsuleAsync = createAsyncThunk(
-  'capsules/addCapsuleAsync',
-  async (capsule: Capsule) => {
+// Thunk'ın ismini değiştirdik
+export const saveCapsule = createAsyncThunk(
+  'capsules/save',
+  async (capsule: Omit<Capsule, 'id'>) => {
     try {
-      const response = await StorageService.getCapsules();
-      const capsules = response || [];
-      const updatedCapsules = [...capsules, capsule];
-      await StorageService.saveCapsules(updatedCapsules);
-      return capsule;
+      const existingCapsules = await AsyncStorage.getItem('capsules');
+      const capsules = existingCapsules ? JSON.parse(existingCapsules) : [];
+
+      const newCapsule = {
+        ...capsule,
+        id: Date.now().toString(),
+      };
+
+      capsules.push(newCapsule);
+      await AsyncStorage.setItem('capsules', JSON.stringify(capsules));
+
+      return newCapsule;
     } catch (error) {
-      console.error('Kapsül eklenirken hata:', error);
+      console.error('Kapsül kaydetme hatası:', error);
       throw error;
     }
   },
 );
 
+export const loadCapsules = createAsyncThunk('capsules/load', async () => {
+  try {
+    const capsules = await AsyncStorage.getItem('capsules');
+    return capsules ? JSON.parse(capsules) : [];
+  } catch (error) {
+    console.error('Kapsüller yüklenirken hata:', error);
+    throw error;
+  }
+});
+
 const capsuleSlice = createSlice({
   name: 'capsules',
   initialState,
   reducers: {
-    addCapsule: (state, action: PayloadAction<Capsule>) => {
+    addCapsule: (state, action) => {
       state.items.push(action.payload);
     },
-    removeCapsule: (state, action: PayloadAction<string>) => {
+    removeCapsule: (state, action) => {
       state.items = state.items.filter(
         capsule => capsule.id !== action.payload,
       );
-      StorageService.saveCapsules(state.items);
     },
-    updateCapsule: (state, action: PayloadAction<Capsule>) => {
+    updateCapsule: (state, action) => {
       const index = state.items.findIndex(
         capsule => capsule.id === action.payload.id,
       );
       if (index !== -1) {
         state.items[index] = action.payload;
-        StorageService.saveCapsules(state.items);
       }
     },
   },
   extraReducers: builder => {
     builder
-      .addCase(fetchCapsules.pending, state => {
+      .addCase(loadCapsules.pending, state => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchCapsules.fulfilled, (state, action) => {
+      .addCase(loadCapsules.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload || [];
+        state.items = action.payload;
       })
-      .addCase(fetchCapsules.rejected, (state, action) => {
+      .addCase(loadCapsules.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Kapsüller yüklenemedi';
       })
-      .addCase(addCapsuleAsync.fulfilled, (state, action) => {
+      .addCase(saveCapsule.fulfilled, (state, action) => {
         state.items.push(action.payload);
       })
-      .addCase(addCapsuleAsync.rejected, (state, action) => {
+      .addCase(saveCapsule.rejected, (state, action) => {
         state.error = action.error.message || 'Kapsül eklenemedi';
       });
   },

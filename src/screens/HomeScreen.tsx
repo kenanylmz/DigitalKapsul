@@ -27,7 +27,7 @@ import AnimatedCapsuleCard from '../components/AnimatedCapsuleCard';
 
 import AnimatedFAB from '../components/AnimatedFAB';
 
-import {fetchCapsules} from '../store/capsuleSlice';
+import {loadCapsules} from '../store/capsuleSlice';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
@@ -41,15 +41,27 @@ const HomeScreen = () => {
 
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    dispatch(fetchCapsules());
-  }, [dispatch]);
-
   const capsules = useSelector((state: RootState) => state.capsules.items);
 
   const loading = useSelector((state: RootState) => state.capsules.loading);
 
   const error = useSelector((state: RootState) => state.capsules.error);
+
+  useEffect(() => {
+    dispatch(loadCapsules());
+  }, [dispatch]);
+
+  const renderEmptyList = () => (
+    <View style={styles.emptyContainer}>
+      <View style={styles.emptyIconContainer}>
+        <Text style={styles.emptyIcon}>📬</Text>
+      </View>
+      <Text style={styles.emptyText}>Henüz hiç kapsül oluşturmadınız.</Text>
+      <Text style={styles.emptySubText}>
+        Yeni bir kapsül oluşturmak için + butonuna tıklayın.
+      </Text>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -62,17 +74,7 @@ const HomeScreen = () => {
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : capsules.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <View style={styles.emptyIconContainer}>
-            <Text style={styles.emptyIcon}>📬</Text>
-          </View>
-          <Text style={styles.emptyText}>
-            Henüz hiç kapsül oluşturmadınız.
-          </Text>
-          <Text style={styles.emptySubText}>
-            Yeni bir kapsül oluşturmak için + butonuna tıklayın.
-          </Text>
-        </View>
+        renderEmptyList()
       ) : (
         <FlatList
           data={capsules}
@@ -88,6 +90,7 @@ const HomeScreen = () => {
           )}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
+          ListEmptyComponent={renderEmptyList}
         />
       )}
       <AnimatedFAB onPress={() => navigation.navigate('CreateCapsule')} />

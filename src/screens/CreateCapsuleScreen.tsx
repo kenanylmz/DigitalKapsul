@@ -21,7 +21,7 @@ import {useDispatch} from 'react-redux';
 import {format} from 'date-fns';
 import {tr} from 'date-fns/locale';
 import {COLORS, SPACING, LETTER_FONTS} from '../theme';
-import {addCapsule} from '../store/capsuleSlice';
+import {addCapsule, saveCapsule} from '../store/capsuleSlice';
 import {Capsule, MediaContent} from '../types';
 import MediaPicker from '../components/MediaPicker';
 import CustomDatePicker from '../components/CustomDatePicker';
@@ -79,20 +79,20 @@ const CreateCapsuleScreen = () => {
   };
 
   const handleSealAnimationComplete = () => {
-    const newCapsule: Capsule = {
-      id: Date.now().toString(),
+    const newCapsule: Omit<Capsule, 'id'> = {
       title,
       description,
-      content,
-      type: 'text',
+      content: type === 'text' ? content : '',
+      type,
+      mediaUrl: mediaContent?.uri,
+      mediaContent: mediaContent,
       openDate: openDate.toISOString(),
       createdAt: new Date().toISOString(),
       isLocked: true,
       recipientEmail: recipientEmail || undefined,
-      images: images,
     };
 
-    dispatch(addCapsule(newCapsule));
+    dispatch(saveCapsule(newCapsule));
     setShowAnimation(true);
   };
 

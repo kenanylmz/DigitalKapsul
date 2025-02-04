@@ -1,21 +1,22 @@
 export interface MediaContent {
   uri: string;
-  type: 'image' | 'video';
-  fileName?: string;
+  type: string;
+  fileName: string;
+  base64?: string;
 }
 
 export interface Capsule {
   id: string;
   title: string;
   description: string;
-  createdAt: string;
-  openDate: string;
-  type: 'text' | 'image' | 'video';
   content: string;
+  type: 'text' | 'image' | 'video';
+  mediaUrl?: string;
   mediaContent?: MediaContent;
+  openDate: string;
+  createdAt: string;
   isLocked: boolean;
   recipientEmail?: string;
-  images?: Array<{uri: string; position: number}>;
 }
 
 export interface User {

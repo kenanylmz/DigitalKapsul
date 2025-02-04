@@ -23,7 +23,10 @@ import LinearGradient from 'react-native-linear-gradient';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
-type CapsuleDetailScreenRouteProp = RouteProp<RootStackParamList, 'CapsuleDetail'>;
+type CapsuleDetailScreenRouteProp = RouteProp<
+  RootStackParamList,
+  'CapsuleDetail'
+>;
 
 const CapsuleDetailScreen = () => {
   const route = useRoute<CapsuleDetailScreenRouteProp>();
@@ -86,7 +89,7 @@ const CapsuleDetailScreen = () => {
         <Surface style={styles.contentSurface}>
           <View style={styles.headerContainer}>
             <View style={styles.titleContainer}>
-              <Image 
+              <Image
                 source={require('../assets/images/time-capsule-bg.png')}
                 style={styles.capsuleIcon}
               />
@@ -103,26 +106,30 @@ const CapsuleDetailScreen = () => {
 
           <View style={styles.dateContainer}>
             <View style={styles.dateBox}>
-              <Image 
+              <Image
                 source={require('../assets/images/create-date-icon.png')}
                 style={styles.dateIcon}
               />
               <View>
                 <Text style={styles.dateLabel}>Oluşturulma</Text>
                 <Text style={styles.dateValue}>
-                  {format(new Date(capsule.createdAt), 'dd MMMM yyyy', {locale: tr})}
+                  {format(new Date(capsule.createdAt), 'dd MMMM yyyy', {
+                    locale: tr,
+                  })}
                 </Text>
               </View>
             </View>
             <View style={styles.dateBox}>
-              <Image 
+              <Image
                 source={require('../assets/images/open-date-icon.png')}
                 style={styles.dateIcon}
               />
               <View>
                 <Text style={styles.dateLabel}>Açılış Tarihi</Text>
                 <Text style={styles.dateValue}>
-                  {format(new Date(capsule.openDate), 'dd MMMM yyyy', {locale: tr})}
+                  {format(new Date(capsule.openDate), 'dd MMMM yyyy', {
+                    locale: tr,
+                  })}
                 </Text>
               </View>
             </View>
@@ -160,13 +167,15 @@ const CapsuleDetailScreen = () => {
 
           {capsule.recipientEmail && (
             <View style={styles.recipientContainer}>
-              <Image 
+              <Image
                 source={require('../assets/images/recipient-icon.png')}
                 style={styles.recipientIcon}
               />
               <View>
                 <Text style={styles.recipientLabel}>Alıcı</Text>
-                <Text style={styles.recipientValue}>{capsule.recipientEmail}</Text>
+                <Text style={styles.recipientValue}>
+                  {capsule.recipientEmail}
+                </Text>
               </View>
             </View>
           )}
@@ -364,4 +373,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CapsuleDetailScreen; 
+export default CapsuleDetailScreen;

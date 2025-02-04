@@ -13,7 +13,7 @@ import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {store} from './src/store';
 import AppNavigator from './src/navigation/AppNavigator';
 import {COLORS} from './src/theme';
-import {fetchCapsules} from './src/store/capsuleSlice';
+import {loadCapsules} from './src/store/capsuleSlice';
 import {AppDispatch} from './src/store';
 
 const theme = {
@@ -31,7 +31,7 @@ const AppContent = () => {
   const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
-    dispatch(fetchCapsules());
+    dispatch(loadCapsules());
   }, [dispatch]);
 
   return (

@@ -1,5 +1,11 @@
 import React from 'react';
-import {View, StyleSheet, Image, Platform, PermissionsAndroid} from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Image,
+  Platform,
+  PermissionsAndroid,
+} from 'react-native';
 import {Button} from 'react-native-paper';
 import {
   launchCamera,
@@ -51,7 +57,8 @@ const MediaPicker = ({type, value, onChange}: MediaPickerProps) => {
     const options: CameraOptions | ImageLibraryOptions = {
       mediaType: type,
       quality: 1,
-      saveToPhotos: false,
+      saveToPhotos: true,
+      includeBase64: true,
     };
 
     try {
@@ -63,8 +70,11 @@ const MediaPicker = ({type, value, onChange}: MediaPickerProps) => {
         const asset = result.assets[0];
         onChange({
           uri: asset.uri!,
-          type: type,
-          fileName: asset.fileName,
+          type: asset.type || `${type}/${type === 'image' ? 'jpeg' : 'mp4'}`,
+          fileName:
+            asset.fileName ||
+            `${Date.now()}.${type === 'image' ? 'jpg' : 'mp4'}`,
+          base64: asset.base64,
         });
       }
     } catch (error) {
@@ -84,6 +94,7 @@ const MediaPicker = ({type, value, onChange}: MediaPickerProps) => {
               style={styles.preview}
               paused={true}
               resizeMode="cover"
+              repeat={true}
             />
           )}
           <Button
@@ -123,24 +134,26 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: SPACING.sm,
   },
   button: {
     flex: 1,
-    marginHorizontal: SPACING.xs,
     backgroundColor: COLORS.primary,
   },
   previewContainer: {
     alignItems: 'center',
+    width: '100%',
   },
   preview: {
     width: '100%',
     height: 200,
     borderRadius: 8,
     marginBottom: SPACING.sm,
+    backgroundColor: COLORS.letter.contentBg,
   },
   removeButton: {
     backgroundColor: COLORS.error,
   },
 });
 
-export default MediaPicker; 
+export default MediaPicker;
