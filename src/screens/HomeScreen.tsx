@@ -101,7 +101,7 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#1A1A2E',
   },
   listContainer: {
     padding: SPACING.sm,

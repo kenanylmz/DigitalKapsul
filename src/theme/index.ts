@@ -1,5 +1,7 @@
 export const COLORS = {
   primary: '#6C63FF',
+  primaryLight: 'rgba(138, 43, 226, 0.15)',
+  primaryGlow: 'rgba(138, 43, 226, 0.25)',
   secondary: '#4CAF50',
   background: '#1A1B1E',
   white: '#FFFFFF',
@@ -34,6 +36,26 @@ export const COLORS = {
     ribbon: {
       primary: '#6C63FF',
       shadow: 'rgba(108, 99, 255, 0.3)',
+    },
+  },
+  capsule: {
+    background: {
+      start: 'rgba(138, 43, 226, 0.08)',
+      end: 'rgba(138, 43, 226, 0.02)',
+    },
+    border: {
+      default: 'rgba(138, 43, 226, 0.3)',
+      glow: 'rgba(138, 43, 226, 0.5)',
+    },
+    icon: {
+      text: '#6C63FF',
+      image: '#FF6B6B',
+      video: '#4ECDC4',
+    },
+    card: {
+      background: 'rgba(108, 99, 255, 0.12)',
+      border: 'rgba(108, 99, 255, 0.25)',
+      shimmer: '#FFFFFF',
     },
   },
 };
