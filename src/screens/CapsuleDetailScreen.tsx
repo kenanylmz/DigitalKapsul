@@ -28,9 +28,7 @@ type CapsuleDetailScreenRouteProp = RouteProp<
   'CapsuleDetail'
 >;
 
-const CapsuleDetailScreen = () => {
-  const route = useRoute<CapsuleDetailScreenRouteProp>();
-  const navigation = useNavigation();
+const CapsuleDetailScreen = ({route, navigation}) => {
   const dispatch = useDispatch();
   const [showAnimation, setShowAnimation] = useState(false);
   const [showDeleteAnimation, setShowDeleteAnimation] = useState(false);
@@ -87,116 +85,128 @@ const CapsuleDetailScreen = () => {
     <View style={styles.container}>
       <ScrollView style={styles.scrollView}>
         <Surface style={styles.contentSurface}>
-          <View style={styles.headerContainer}>
-            <View style={styles.titleContainer}>
-              <Image
-                source={require('../assets/images/time-capsule-bg.png')}
-                style={styles.capsuleIcon}
-              />
-              <Title style={styles.title}>{capsule.title}</Title>
-            </View>
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusText}>
-                {capsule.isLocked ? '🔒 Kilitli' : '🔓 Açık'}
-              </Text>
-            </View>
-          </View>
-
-          <Text style={styles.description}>{capsule.description}</Text>
-
-          <View style={styles.dateContainer}>
-            <View style={styles.dateBox}>
-              <Image
-                source={require('../assets/images/create-date-icon.png')}
-                style={styles.dateIcon}
-              />
-              <View>
-                <Text style={styles.dateLabel}>Oluşturulma</Text>
-                <Text style={styles.dateValue}>
-                  {format(new Date(capsule.createdAt), 'dd MMMM yyyy', {
-                    locale: tr,
-                  })}
+          <View style={styles.innerContent}>
+            <View style={styles.headerContainer}>
+              <View style={styles.titleContainer}>
+                <Image
+                  source={require('../assets/images/time-capsule-bg.png')}
+                  style={styles.capsuleIcon}
+                />
+                <Title style={[styles.title, {color: COLORS.text.primary}]}>
+                  {capsule.title}
+                </Title>
+              </View>
+              <View style={styles.statusBadge}>
+                <Text style={styles.statusText}>
+                  {capsule.isLocked ? '🔒 Kilitli' : '🔓 Açık'}
                 </Text>
               </View>
             </View>
-            <View style={styles.dateBox}>
-              <Image
-                source={require('../assets/images/open-date-icon.png')}
-                style={styles.dateIcon}
-              />
-              <View>
-                <Text style={styles.dateLabel}>Açılış Tarihi</Text>
-                <Text style={styles.dateValue}>
-                  {format(new Date(capsule.openDate), 'dd MMMM yyyy', {
-                    locale: tr,
-                  })}
-                </Text>
-              </View>
-            </View>
-          </View>
 
-          {!capsule.isLocked && (
-            <View style={styles.contentContainer}>
-              <Text style={styles.contentLabel}>İçerik</Text>
-              {capsule.type === 'text' ? (
-                <Surface style={styles.textContent}>
-                  <Text style={styles.content}>{capsule.content}</Text>
-                </Surface>
-              ) : capsule.mediaContent ? (
-                <View style={styles.mediaContainer}>
-                  {capsule.type === 'image' ? (
-                    <Image
-                      source={{uri: capsule.mediaContent.uri}}
-                      style={styles.media}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <Video
-                      source={{uri: capsule.mediaContent.uri}}
-                      style={styles.media}
-                      controls={true}
-                      resizeMode="cover"
-                    />
-                  )}
+            <Text style={[styles.description, {color: COLORS.text.primary}]}>
+              {capsule.description}
+            </Text>
+
+            <View style={styles.dateContainer}>
+              <View style={styles.dateBox}>
+                <Image
+                  source={require('../assets/images/create-date-icon.png')}
+                  style={styles.dateIcon}
+                />
+                <View>
+                  <Text style={styles.dateLabel}>Oluşturulma</Text>
+                  <Text style={styles.dateValue}>
+                    {format(new Date(capsule.createdAt), 'dd MMMM yyyy', {
+                      locale: tr,
+                    })}
+                  </Text>
                 </View>
-              ) : (
-                <Text style={styles.errorText}>Medya bulunamadı</Text>
-              )}
-            </View>
-          )}
-
-          {capsule.recipientEmail && (
-            <View style={styles.recipientContainer}>
-              <Image
-                source={require('../assets/images/recipient-icon.png')}
-                style={styles.recipientIcon}
-              />
-              <View>
-                <Text style={styles.recipientLabel}>Alıcı</Text>
-                <Text style={styles.recipientValue}>
-                  {capsule.recipientEmail}
-                </Text>
+              </View>
+              <View style={styles.dateBox}>
+                <Image
+                  source={require('../assets/images/open-date-icon.png')}
+                  style={styles.dateIcon}
+                />
+                <View>
+                  <Text style={styles.dateLabel}>Açılış Tarihi</Text>
+                  <Text style={styles.dateValue}>
+                    {format(new Date(capsule.openDate), 'dd MMMM yyyy', {
+                      locale: tr,
+                    })}
+                  </Text>
+                </View>
               </View>
             </View>
-          )}
 
-          <View style={styles.buttonContainer}>
-            {capsule.isLocked && (
-              <Button
-                mode="contained"
-                onPress={handleOpenCapsule}
-                style={styles.button}
-                disabled={!canOpen}>
-                {canOpen ? 'Kapsülü Aç' : 'Henüz Açılamaz'}
-              </Button>
+            {!capsule.isLocked && (
+              <View style={styles.contentContainer}>
+                <Text
+                  style={[styles.contentLabel, {color: COLORS.text.primary}]}>
+                  İçerik
+                </Text>
+                {capsule.type === 'text' ? (
+                  <Surface style={styles.textContent}>
+                    <Text
+                      style={[styles.content, {color: COLORS.text.primary}]}>
+                      {capsule.content}
+                    </Text>
+                  </Surface>
+                ) : capsule.mediaContent ? (
+                  <View style={styles.mediaContainer}>
+                    {capsule.type === 'image' ? (
+                      <Image
+                        source={{uri: capsule.mediaContent.uri}}
+                        style={styles.media}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <Video
+                        source={{uri: capsule.mediaContent.uri}}
+                        style={styles.media}
+                        controls={true}
+                        resizeMode="cover"
+                      />
+                    )}
+                  </View>
+                ) : (
+                  <Text style={styles.errorText}>Medya bulunamadı</Text>
+                )}
+              </View>
             )}
-            <Button
-              mode="outlined"
-              onPress={handleDelete}
-              style={[styles.button, styles.deleteButton]}
-              textColor={COLORS.error}>
-              Kapsülü Sil
-            </Button>
+
+            {capsule.recipientEmail && (
+              <View style={styles.recipientContainer}>
+                <Image
+                  source={require('../assets/images/recipient-icon.png')}
+                  style={styles.recipientIcon}
+                />
+                <View>
+                  <Text style={styles.recipientLabel}>Alıcı</Text>
+                  <Text style={styles.recipientValue}>
+                    {capsule.recipientEmail}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            <View style={styles.buttonContainer}>
+              {capsule.isLocked && (
+                <Button
+                  mode="contained"
+                  onPress={handleOpenCapsule}
+                  style={styles.button}
+                  disabled={!canOpen}>
+                  {canOpen ? 'Kapsülü Aç' : 'Henüz Açılamaz'}
+                </Button>
+              )}
+              <Button
+                mode="outlined"
+                onPress={handleDelete}
+                style={[styles.button, styles.deleteButton]}
+                textColor={COLORS.error}>
+                Kapsülü Sil
+              </Button>
+            </View>
           </View>
         </Surface>
       </ScrollView>
@@ -227,14 +237,20 @@ const styles = StyleSheet.create({
   },
   contentSurface: {
     margin: SPACING.md,
-    padding: SPACING.md,
-    borderRadius: 12,
-    backgroundColor: COLORS.card.background,
+    borderRadius: 16,
+    backgroundColor: 'rgba(20, 20, 35, 0.95)',
     borderWidth: 1,
-    borderColor: COLORS.card.border,
+    borderColor: 'rgba(108, 99, 255, 0.2)',
     elevation: 4,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  innerContent: {
+    padding: SPACING.md,
+    zIndex: 1,
   },
   headerContainer: {
+    padding: SPACING.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
