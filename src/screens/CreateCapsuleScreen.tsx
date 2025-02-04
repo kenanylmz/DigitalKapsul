@@ -293,19 +293,13 @@ const styles = StyleSheet.create({
   letterSurface: {
     margin: SPACING.md,
     padding: SPACING.md,
+    paddingBottom: SPACING.xl + 100,
     backgroundColor: COLORS.letter.background,
     borderRadius: 12,
     borderWidth: 2,
     borderColor: COLORS.letter.ribbon.primary,
     elevation: 4,
-    shadowColor: COLORS.letter.ribbon.shadow,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.8,
-    shadowRadius: 4,
-    borderStyle: 'solid',
+    position: 'relative',
   },
   letterHeader: {
     alignItems: 'flex-end',
@@ -356,8 +350,9 @@ const styles = StyleSheet.create({
     color: COLORS.white,
   },
   sealContainer: {
-    alignItems: 'flex-end',
-    marginTop: SPACING.xl,
+    position: 'absolute',
+    right: SPACING.md,
+    bottom: SPACING.md,
     height: 100,
     marginRight: SPACING.md,
   },
