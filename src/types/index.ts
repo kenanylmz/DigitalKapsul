@@ -15,6 +15,7 @@ export interface Capsule {
   mediaContent?: MediaContent;
   isLocked: boolean;
   recipientEmail?: string;
+  images?: Array<{uri: string; position: number}>;
 }
 
 export interface User {
@@ -22,4 +23,4 @@ export interface User {
   email: string;
   name: string;
   capsules: Capsule[];
-} 
+}

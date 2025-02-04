@@ -1,10 +1,11 @@
-import React, {useState} from 'react';
+import React, {useState, useRef} from 'react';
 import {
-  View, 
-  StyleSheet, 
-  ScrollView, 
+  View,
+  StyleSheet,
+  ScrollView,
   ImageBackground,
-  Dimensions
+  Dimensions,
+  Animated,
 } from 'react-native';
 import {
   TextInput,
@@ -12,17 +13,20 @@ import {
   SegmentedButtons,
   Surface,
   Text,
+  Provider as PaperProvider,
+  DefaultTheme,
 } from 'react-native-paper';
 import {useNavigation} from '@react-navigation/native';
 import {useDispatch} from 'react-redux';
 import {format} from 'date-fns';
 import {tr} from 'date-fns/locale';
-import {COLORS, SPACING} from '../theme';
+import {COLORS, SPACING, LETTER_FONTS} from '../theme';
 import {addCapsule} from '../store/capsuleSlice';
 import {Capsule, MediaContent} from '../types';
 import MediaPicker from '../components/MediaPicker';
 import CustomDatePicker from '../components/CustomDatePicker';
 import CapsuleAnimation from '../components/CapsuleAnimation';
+import RichTextEditor from '../components/RichTextEditor';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
@@ -39,6 +43,11 @@ const CreateCapsuleScreen = () => {
   const [recipientEmail, setRecipientEmail] = useState('');
   const [mediaContent, setMediaContent] = useState<MediaContent>();
   const [showAnimation, setShowAnimation] = useState(false);
+  const [cursorPosition, setCursorPosition] = useState({x: 0, y: 0});
+  const inkAnimation = useRef(new Animated.Value(0)).current;
+  const [images, setImages] = useState<Array<{uri: string; position: number}>>(
+    [],
+  );
 
   const months = [
     'Ocak',
@@ -64,24 +73,24 @@ const CreateCapsuleScreen = () => {
   const [selectedYear, setSelectedYear] = useState(openDate.getFullYear());
 
   const handleCreateCapsule = () => {
-    setShowAnimation(true);
-  };
-
-  const handleAnimationComplete = () => {
     const newCapsule: Capsule = {
       id: Date.now().toString(),
       title,
       description,
       content,
-      type,
+      type: 'text',
       openDate: openDate.toISOString(),
       createdAt: new Date().toISOString(),
       isLocked: true,
       recipientEmail: recipientEmail || undefined,
-      mediaContent,
+      images: images,
     };
 
     dispatch(addCapsule(newCapsule));
+    setShowAnimation(true);
+  };
+
+  const handleAnimationComplete = () => {
     navigation.goBack();
   };
 
@@ -92,7 +101,7 @@ const CreateCapsuleScreen = () => {
 
   const isFormValid = () => {
     if (!title || !description) return false;
-    
+
     switch (type) {
       case 'text':
         return !!content;
@@ -104,204 +113,249 @@ const CreateCapsuleScreen = () => {
     }
   };
 
+  const animateInk = (x: number, y: number) => {
+    setCursorPosition({x, y});
+    Animated.sequence([
+      Animated.timing(inkAnimation, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(inkAnimation, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const handleImageAdd = (uri: string, position: number) => {
+    setImages(prev => [...prev, {uri, position}]);
+  };
+
+  const handleImageRemove = (position: number) => {
+    setImages(prev => prev.filter(img => img.position !== position));
+  };
+
+  const theme = {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      onSurfaceVariant: COLORS.letter.text,
+      outline: COLORS.letter.ink,
+      text: COLORS.white,
+      onSurface: COLORS.white,
+      placeholder: COLORS.letter.placeholder,
+      primary: COLORS.letter.ink,
+    },
+  };
+
   return (
-    <ImageBackground
-      source={require('../assets/images/vintage-paper-bg.jpg')}
-      style={styles.backgroundImage}>
-      <ScrollView style={styles.container}>
-        <Surface style={styles.letterSurface}>
-          <View style={styles.letterHeader}>
-            <View style={styles.stamp} />
-            <View style={styles.postmark}>
-              <Text style={styles.postmarkText}>
-                {format(new Date(), 'dd.MM.yyyy')}
+    <PaperProvider theme={theme}>
+      <View style={styles.container}>
+        <ScrollView>
+          <Surface style={styles.letterSurface}>
+            <View style={styles.letterHeader}>
+              <Text style={styles.dateText}>
+                {format(new Date(), 'dd MMMM yyyy', {locale: tr})}
               </Text>
             </View>
-          </View>
 
-          <View style={styles.content}>
-            <TextInput
-              label="Başlık"
-              value={title}
-              onChangeText={setTitle}
-              mode="flat"
-              style={styles.titleInput}
-              theme={{colors: {primary: COLORS.primary}}}
-            />
-
-            <TextInput
-              label="Açıklama"
-              value={description}
-              onChangeText={setDescription}
-              mode="flat"
-              multiline
-              numberOfLines={3}
-              style={styles.descriptionInput}
-            />
-
-            <SegmentedButtons
-              value={type}
-              onValueChange={value => {
-                setType(value as 'text' | 'image' | 'video');
-                setMediaContent(undefined);
-              }}
-              buttons={[
-                {value: 'text', label: 'Metin'},
-                {value: 'image', label: 'Fotoğraf'},
-                {value: 'video', label: 'Video'},
-              ]}
-              style={styles.segmentedButton}
-            />
-
-            {type !== 'text' ? (
-              <MediaPicker
-                type={type === 'image' ? 'image' : 'video'}
-                value={mediaContent}
-                onChange={setMediaContent}
+            <View style={styles.contentContainer}>
+              <TextInput
+                label="Başlık"
+                value={title}
+                onChangeText={setTitle}
+                style={styles.titleInput}
               />
-            ) : (
-              <View style={styles.textContentContainer}>
-                <TextInput
-                  label="İçerik"
-                  value={content}
-                  onChangeText={setContent}
-                  mode="flat"
-                  multiline
-                  numberOfLines={5}
-                  style={styles.contentInput}
-                />
+
+              <TextInput
+                label="Açıklama"
+                value={description}
+                onChangeText={setDescription}
+                style={styles.descriptionInput}
+                multiline
+                numberOfLines={2}
+              />
+
+              <SegmentedButtons
+                value={type}
+                onValueChange={value => {
+                  setType(value as 'text' | 'image' | 'video');
+                  setMediaContent(undefined);
+                }}
+                buttons={[
+                  {
+                    value: 'text',
+                    label: 'Metin',
+                    style: styles.segmentButton,
+                    labelStyle: styles.segmentButtonLabel,
+                  },
+                  {
+                    value: 'image',
+                    label: 'Fotoğraf',
+                    style: styles.segmentButton,
+                    labelStyle: styles.segmentButtonLabel,
+                  },
+                  {
+                    value: 'video',
+                    label: 'Video',
+                    style: styles.segmentButton,
+                    labelStyle: styles.segmentButtonLabel,
+                  },
+                ]}
+                style={styles.segmentedButton}
+              />
+
+              <View style={styles.contentWrapper}>
+                {type === 'text' ? (
+                  <View style={styles.letterContent}>
+                    <RichTextEditor
+                      value={content}
+                      onChangeText={setContent}
+                      onSelectionChange={(x, y) => animateInk(x, y)}
+                    />
+                  </View>
+                ) : (
+                  <MediaPicker
+                    type={type}
+                    value={mediaContent}
+                    onChange={setMediaContent}
+                  />
+                )}
               </View>
-            )}
 
-            <Button
-              mode="outlined"
-              onPress={() => setShowDatePicker(true)}
-              style={styles.dateButton}
-              icon="calendar">
-              Açılış Tarihi: {format(openDate, 'dd MMMM yyyy', {locale: tr})}
-            </Button>
+              <Button
+                mode="outlined"
+                onPress={() => setShowDatePicker(true)}
+                style={styles.dateButton}
+                icon="calendar"
+                textColor={COLORS.letter.ink}>
+                Açılış Tarihi: {format(openDate, 'dd MMMM yyyy', {locale: tr})}
+              </Button>
 
-            <TextInput
-              label="Alıcı E-posta (Opsiyonel)"
-              value={recipientEmail}
-              onChangeText={setRecipientEmail}
-              mode="flat"
-              keyboardType="email-address"
-              style={styles.emailInput}
-            />
-          </View>
-
-          <View style={styles.sealContainer}>
-            <View style={styles.waxSeal}>
-              <Text style={styles.sealText}>DK</Text>
+              <TextInput
+                label="Alıcı E-posta (Opsiyonel)"
+                value={recipientEmail}
+                onChangeText={setRecipientEmail}
+                style={styles.emailInput}
+              />
             </View>
-          </View>
-        </Surface>
-      </ScrollView>
 
-      <Button
-        mode="contained"
-        onPress={handleCreateCapsule}
-        style={styles.createButton}
-        disabled={!isFormValid()}>
-        Kapsülü Oluştur
-      </Button>
+            <View style={styles.sealContainer}>
+              <View style={styles.waxSeal}>
+                <Text style={styles.sealText}>DK</Text>
+              </View>
+            </View>
+          </Surface>
+        </ScrollView>
 
-      <CustomDatePicker
-        visible={showDatePicker}
-        onDismiss={() => setShowDatePicker(false)}
-        onConfirm={handleDateConfirm}
-        currentDate={openDate}
-      />
+        <Button
+          mode="contained"
+          onPress={handleCreateCapsule}
+          style={styles.createButton}
+          labelStyle={styles.buttonLabel}
+          disabled={!isFormValid()}>
+          Kapsülü Oluştur
+        </Button>
 
-      {showAnimation && (
-        <CapsuleAnimation
-          type="create"
-          onAnimationComplete={handleAnimationComplete}
+        <CustomDatePicker
+          visible={showDatePicker}
+          onDismiss={() => setShowDatePicker(false)}
+          onConfirm={handleDateConfirm}
+          currentDate={openDate}
         />
-      )}
-    </ImageBackground>
+
+        {showAnimation && (
+          <CapsuleAnimation
+            type="create"
+            onAnimationComplete={handleAnimationComplete}
+          />
+        )}
+      </View>
+    </PaperProvider>
   );
 };
 
 const styles = StyleSheet.create({
-  backgroundImage: {
-    flex: 1,
-    width: '100%',
-  },
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
   },
   letterSurface: {
     margin: SPACING.md,
     padding: SPACING.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 8,
+    backgroundColor: COLORS.letter.background,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: COLORS.letter.ribbon.primary,
     elevation: 4,
+    shadowColor: COLORS.letter.ribbon.shadow,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+    borderStyle: 'solid',
   },
   letterHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.md,
+    alignItems: 'flex-end',
+    marginBottom: SPACING.lg,
+    paddingBottom: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.letter.lines,
   },
-  stamp: {
-    width: 50,
-    height: 60,
-    backgroundColor: COLORS.primary,
-    opacity: 0.8,
-    borderRadius: 4,
+  dateText: {
+    fontFamily: LETTER_FONTS.handwriting,
+    color: COLORS.letter.text,
+    fontSize: 16,
   },
-  postmark: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: SPACING.sm,
-    borderWidth: 1,
-    borderColor: COLORS.text.light,
-    borderStyle: 'dashed',
-    borderRadius: 4,
-  },
-  postmarkText: {
-    color: COLORS.text.secondary,
-    fontSize: 12,
-  },
-  content: {
-    padding: SPACING.sm,
+  contentContainer: {
+    padding: SPACING.md,
   },
   titleInput: {
     backgroundColor: 'transparent',
+    fontFamily: LETTER_FONTS.handwriting,
+    fontSize: 24,
+    color: COLORS.white,
     marginBottom: SPACING.md,
-    fontSize: 18,
   },
   descriptionInput: {
     backgroundColor: 'transparent',
     marginBottom: SPACING.md,
+    fontSize: 16,
+    color: COLORS.white,
   },
-  contentInput: {
-    backgroundColor: 'transparent',
-    marginBottom: SPACING.md,
-  },
-  textContentContainer: {
-    borderLeftWidth: 2,
-    borderLeftColor: COLORS.primary,
-    paddingLeft: SPACING.sm,
+  contentWrapper: {
+    backgroundColor: COLORS.letter.contentBg,
+    borderRadius: 8,
+    padding: SPACING.sm,
     marginVertical: SPACING.md,
+    minHeight: 200,
+  },
+  letterContent: {
+    position: 'relative',
+    minHeight: 200,
   },
   dateButton: {
     marginVertical: SPACING.md,
+    borderColor: COLORS.letter.ink,
   },
   emailInput: {
     backgroundColor: 'transparent',
     marginBottom: SPACING.md,
+    color: COLORS.white,
   },
   sealContainer: {
     alignItems: 'flex-end',
-    marginTop: SPACING.md,
+    marginTop: SPACING.xl,
   },
   waxSeal: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.letter.seal,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
@@ -311,12 +365,26 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
+  segmentedButton: {
+    marginBottom: SPACING.md,
+  },
   createButton: {
     margin: SPACING.md,
     backgroundColor: COLORS.primary,
   },
-  segmentedButton: {
-    marginBottom: SPACING.md,
+  segmentButton: {
+    borderColor: COLORS.letter.ink,
+  },
+  segmentButtonLabel: {
+    color: COLORS.letter.text,
+  },
+  buttonLabel: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  dateButtonLabel: {
+    color: COLORS.letter.text,
   },
 });
 

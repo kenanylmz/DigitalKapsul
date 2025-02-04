@@ -9,7 +9,9 @@ interface CreateAnimationProps {
 }
 
 const CreateAnimation = ({onAnimationComplete}: CreateAnimationProps) => {
-  const rocketPositionY = useRef(new Animated.Value(SCREEN_WIDTH * 0.5)).current;
+  const rocketPositionY = useRef(
+    new Animated.Value(SCREEN_WIDTH * 0.5),
+  ).current;
   const rocketScale = useRef(new Animated.Value(1)).current;
   const letterScale = useRef(new Animated.Value(1)).current;
   const letterPositionY = useRef(new Animated.Value(0)).current;
@@ -65,13 +67,41 @@ const CreateAnimation = ({onAnimationComplete}: CreateAnimationProps) => {
     <View style={styles.container}>
       {/* Yıldızlar */}
       <Stars starsOpacity={starsOpacity} />
-      
+
       {/* Mektup */}
-      <Letter letterScale={letterScale} letterPositionY={letterPositionY} />
-      
+      <Animated.View
+        style={[
+          styles.letter,
+          {
+            transform: [{translateY: letterPositionY}, {scale: letterScale}],
+          },
+        ]}>
+        {/* Mektup başlığı */}
+        <View style={styles.letterHeader}>
+          <View style={styles.letterDate} />
+        </View>
+
+        {/* Mektup çizgileri */}
+        <View style={styles.letterContent}>
+          {Array.from({length: 6}).map((_, index) => (
+            <View key={index} style={styles.line} />
+          ))}
+        </View>
+
+        {/* Mektup altlığı */}
+        <View style={styles.letterFooter}>
+          <View style={styles.signature} />
+        </View>
+
+        {/* Mühür */}
+        <View style={styles.seal}>
+          <View style={styles.sealInner} />
+        </View>
+      </Animated.View>
+
       {/* Roket */}
-      <Rocket 
-        rocketScale={rocketScale} 
+      <Rocket
+        rocketScale={rocketScale}
         rocketPositionY={rocketPositionY}
         smokeOpacity={smokeOpacity}
       />
@@ -133,28 +163,45 @@ const Stars = ({starsOpacity}: {starsOpacity: Animated.Value}) => (
 
 // Letter bileşeni
 interface LetterProps {
-  letterScale: Animated.Value;
-  letterPositionY: Animated.Value;
+  scale: Animated.Value;
+  positionY: Animated.Value;
 }
 
-const Letter = ({letterScale, letterPositionY}: LetterProps) => (
+const Letter = ({
+  scale,
+  positionY,
+}: {
+  scale: Animated.Value;
+  positionY: Animated.Value;
+}) => (
   <Animated.View
     style={[
-      styles.letterContainer,
+      styles.letter,
       {
-        transform: [
-          {scale: letterScale},
-          {translateY: letterPositionY},
-          {rotate: '-5deg'},
-        ],
+        transform: [{translateY: positionY}, {scale}],
       },
     ]}>
-    <View style={styles.letter}>
-      <View style={styles.letterStripe} />
-      <View style={styles.letterStripe} />
-      <View style={styles.letterStripe} />
+    {/* Mektup başlığı */}
+    <View style={styles.letterHeader}>
+      <View style={styles.letterDate} />
     </View>
-    <View style={styles.letterSeal} />
+
+    {/* Mektup çizgileri */}
+    <View style={styles.letterContent}>
+      {Array.from({length: 6}).map((_, index) => (
+        <View key={index} style={styles.line} />
+      ))}
+    </View>
+
+    {/* Mektup altlığı */}
+    <View style={styles.letterFooter}>
+      <View style={styles.signature} />
+    </View>
+
+    {/* Mühür */}
+    <View style={styles.seal}>
+      <View style={styles.sealInner} />
+    </View>
   </Animated.View>
 );
 
@@ -170,17 +217,14 @@ const Rocket = ({rocketScale, rocketPositionY, smokeOpacity}: RocketProps) => (
     style={[
       styles.rocketContainer,
       {
-        transform: [
-          {scale: rocketScale},
-          {translateY: rocketPositionY},
-        ],
+        transform: [{scale: rocketScale}, {translateY: rocketPositionY}],
       },
     ]}>
     <View style={styles.rocketBody} />
     <View style={styles.rocketHead} />
     <View style={styles.finLeft} />
     <View style={styles.finRight} />
-    
+
     {/* Roket dumanı */}
     <Animated.View style={[styles.smoke, {opacity: smokeOpacity}]}>
       {Array.from({length: 5}).map((_, i) => (
@@ -221,35 +265,67 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.8,
     shadowRadius: 2,
   },
-  letterContainer: {
+  letter: {
+    width: 120,
+    height: 160,
+    backgroundColor: COLORS.letter.background,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: COLORS.letter.ribbon.primary,
+    padding: 12,
+    overflow: 'hidden',
+  },
+  letterHeader: {
+    height: 20,
+    alignItems: 'flex-end',
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.letter.lines,
+  },
+  letterDate: {
+    width: 60,
+    height: 2,
+    backgroundColor: COLORS.letter.lines,
+    marginBottom: 4,
+  },
+  letterContent: {
+    flex: 1,
+    paddingVertical: 8,
+  },
+  line: {
+    height: 2,
+    backgroundColor: COLORS.letter.lines,
+    marginVertical: 8,
+    opacity: 0.6,
+  },
+  letterFooter: {
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+  },
+  signature: {
+    width: 40,
+    height: 2,
+    backgroundColor: COLORS.letter.ink,
+    opacity: 0.8,
+  },
+  seal: {
     position: 'absolute',
-    width: SCREEN_WIDTH * 0.3,
-    height: SCREEN_WIDTH * 0.2,
+    right: 10,
+    bottom: 10,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: COLORS.letter.seal,
     justifyContent: 'center',
     alignItems: 'center',
+    elevation: 2,
   },
-  letter: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: COLORS.white,
-    borderRadius: 8,
-    padding: 10,
-    elevation: 5,
-  },
-  letterStripe: {
-    height: 2,
-    backgroundColor: COLORS.text.light,
-    marginVertical: 5,
-    opacity: 0.5,
-  },
-  letterSeal: {
-    position: 'absolute',
+  sealInner: {
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: COLORS.primary,
-    right: 10,
-    top: 10,
+    backgroundColor: COLORS.letter.ribbon.primary,
+    opacity: 0.8,
   },
   rocketContainer: {
     position: 'absolute',
@@ -305,4 +381,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CreateAnimation; 
+export default CreateAnimation;
