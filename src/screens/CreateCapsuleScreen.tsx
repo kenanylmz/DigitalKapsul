@@ -27,6 +27,7 @@ import MediaPicker from '../components/MediaPicker';
 import CustomDatePicker from '../components/CustomDatePicker';
 import CapsuleAnimation from '../components/CapsuleAnimation';
 import RichTextEditor from '../components/RichTextEditor';
+import SealAnimation from '../components/SealAnimation';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
@@ -48,6 +49,7 @@ const CreateCapsuleScreen = () => {
   const [images, setImages] = useState<Array<{uri: string; position: number}>>(
     [],
   );
+  const [showSealAnimation, setShowSealAnimation] = useState(false);
 
   const months = [
     'Ocak',
@@ -73,6 +75,10 @@ const CreateCapsuleScreen = () => {
   const [selectedYear, setSelectedYear] = useState(openDate.getFullYear());
 
   const handleCreateCapsule = () => {
+    setShowSealAnimation(true);
+  };
+
+  const handleSealAnimationComplete = () => {
     const newCapsule: Capsule = {
       id: Date.now().toString(),
       title,
@@ -243,9 +249,11 @@ const CreateCapsuleScreen = () => {
             </View>
 
             <View style={styles.sealContainer}>
-              <View style={styles.waxSeal}>
-                <Text style={styles.sealText}>DK</Text>
-              </View>
+              {showSealAnimation && (
+                <SealAnimation
+                  onAnimationComplete={handleSealAnimationComplete}
+                />
+              )}
             </View>
           </Surface>
         </ScrollView>
@@ -350,20 +358,8 @@ const styles = StyleSheet.create({
   sealContainer: {
     alignItems: 'flex-end',
     marginTop: SPACING.xl,
-  },
-  waxSeal: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: COLORS.letter.seal,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 5,
-  },
-  sealText: {
-    color: COLORS.white,
-    fontSize: 20,
-    fontWeight: 'bold',
+    height: 100,
+    marginRight: SPACING.md,
   },
   segmentedButton: {
     marginBottom: SPACING.md,
