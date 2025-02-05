@@ -54,6 +54,7 @@ const CreateCapsuleScreen = () => {
   const [showSealAnimation, setShowSealAnimation] = useState(false);
   const [selectedCategory, setSelectedCategory] =
     useState<CapsuleCategory>('anı');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const months = [
     'Ocak',
@@ -123,6 +124,7 @@ const CreateCapsuleScreen = () => {
   ];
 
   const handleCreateCapsule = () => {
+    setIsSubmitting(true);
     setShowSealAnimation(true);
   };
 
@@ -141,11 +143,17 @@ const CreateCapsuleScreen = () => {
       category: selectedCategory,
     };
 
-    dispatch(saveCapsule(newCapsule));
-    setShowAnimation(true);
+    try {
+      dispatch(saveCapsule(newCapsule));
+      setShowAnimation(true);
+    } catch (error) {
+      console.error('Kapsül kaydetme hatası:', error);
+      setIsSubmitting(false);
+    }
   };
 
   const handleAnimationComplete = () => {
+    setIsSubmitting(false);
     navigation.goBack();
   };
 
@@ -159,7 +167,7 @@ const CreateCapsuleScreen = () => {
 
     switch (type) {
       case 'text':
-        return !!content;
+        return !!content || !!mediaContent;
       case 'image':
         return !!mediaContent;
       default:
@@ -207,8 +215,12 @@ const CreateCapsuleScreen = () => {
   return (
     <PaperProvider theme={theme}>
       <View style={styles.container}>
-        <ScrollView>
-          <Surface style={styles.letterSurface}>
+        <ScrollView scrollEnabled={!isSubmitting}>
+          <Surface
+            style={[
+              styles.letterSurface,
+              isSubmitting && styles.disabledSurface,
+            ]}>
             <View style={styles.letterHeader}>
               <Text style={styles.dateText}>
                 {format(new Date(), 'dd MMMM yyyy', {locale: tr})}
@@ -221,6 +233,7 @@ const CreateCapsuleScreen = () => {
                 value={title}
                 onChangeText={setTitle}
                 style={styles.titleInput}
+                editable={!isSubmitting}
               />
 
               <TextInput
@@ -230,21 +243,26 @@ const CreateCapsuleScreen = () => {
                 style={styles.descriptionInput}
                 multiline
                 numberOfLines={2}
+                editable={!isSubmitting}
               />
 
               <SegmentedButtons
                 value={type}
-                onValueChange={value => setType(value as 'text' | 'image')}
+                onValueChange={value =>
+                  !isSubmitting && setType(value as 'text' | 'image')
+                }
                 buttons={[
                   {
                     value: 'text',
                     label: 'Metin',
                     icon: 'text-box-outline',
+                    disabled: isSubmitting,
                   },
                   {
                     value: 'image',
                     label: 'Resim',
                     icon: 'image',
+                    disabled: isSubmitting,
                   },
                 ]}
                 style={styles.segmentedButton}
@@ -289,13 +307,11 @@ const CreateCapsuleScreen = () => {
                 {categories.map(({id, label, icon, color, description}) => (
                   <Pressable
                     key={id}
-                    onPress={() => setSelectedCategory(id)}
+                    onPress={() => !isSubmitting && setSelectedCategory(id)}
+                    disabled={isSubmitting}
                     style={[
                       styles.categoryItem,
-                      selectedCategory === id && {
-                        backgroundColor: `${color}20`,
-                        borderColor: color,
-                      },
+                      selectedCategory === id && {borderColor: color},
                     ]}>
                     <View
                       style={[
@@ -338,7 +354,7 @@ const CreateCapsuleScreen = () => {
           onPress={handleCreateCapsule}
           style={styles.createButton}
           labelStyle={styles.buttonLabel}
-          disabled={!isFormValid()}>
+          disabled={!isFormValid() || isSubmitting}>
           Kapsülü Oluştur
         </Button>
 
@@ -492,6 +508,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.text.secondary,
     lineHeight: 16,
+  },
+  disabledSurface: {
+    opacity: 0.7,
+    pointerEvents: 'none',
   },
 });
 
