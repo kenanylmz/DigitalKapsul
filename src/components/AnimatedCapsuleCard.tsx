@@ -20,11 +20,6 @@ const AnimatedCapsuleCard = ({capsule, onPress}: AnimatedCapsuleCardProps) => {
           name: 'image-multiple',
           color: COLORS.capsule.icon.image,
         };
-      case 'video':
-        return {
-          name: 'video-vintage',
-          color: COLORS.capsule.icon.video,
-        };
       default:
         return {
           name: 'text-box-outline',

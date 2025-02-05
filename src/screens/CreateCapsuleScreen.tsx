@@ -42,7 +42,7 @@ const CreateCapsuleScreen = () => {
   const [content, setContent] = useState('');
   const [openDate, setOpenDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [type, setType] = useState<'text' | 'image' | 'video'>('text');
+  const [type, setType] = useState<'text' | 'image'>('text');
   const [recipientEmail, setRecipientEmail] = useState('');
   const [mediaContent, setMediaContent] = useState<MediaContent>();
   const [showAnimation, setShowAnimation] = useState(false);
@@ -161,7 +161,6 @@ const CreateCapsuleScreen = () => {
       case 'text':
         return !!content;
       case 'image':
-      case 'video':
         return !!mediaContent;
       default:
         return false;
@@ -235,28 +234,17 @@ const CreateCapsuleScreen = () => {
 
               <SegmentedButtons
                 value={type}
-                onValueChange={value => {
-                  setType(value as 'text' | 'image' | 'video');
-                  setMediaContent(undefined);
-                }}
+                onValueChange={value => setType(value as 'text' | 'image')}
                 buttons={[
                   {
                     value: 'text',
                     label: 'Metin',
-                    style: styles.segmentButton,
-                    labelStyle: styles.segmentButtonLabel,
+                    icon: 'text-box-outline',
                   },
                   {
                     value: 'image',
-                    label: 'Fotoğraf',
-                    style: styles.segmentButton,
-                    labelStyle: styles.segmentButtonLabel,
-                  },
-                  {
-                    value: 'video',
-                    label: 'Video',
-                    style: styles.segmentButton,
-                    labelStyle: styles.segmentButtonLabel,
+                    label: 'Resim',
+                    icon: 'image',
                   },
                 ]}
                 style={styles.segmentedButton}

@@ -18,7 +18,7 @@ export interface Capsule {
   title: string;
   description: string;
   content: string;
-  type: 'text' | 'image' | 'video';
+  type: 'text' | 'image';
   mediaUrl?: string;
   mediaContent?: MediaContent;
   openDate: string;

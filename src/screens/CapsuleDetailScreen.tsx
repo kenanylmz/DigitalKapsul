@@ -195,7 +195,10 @@ const CapsuleDetailScreen = ({route, navigation}) => {
                   mode="contained"
                   onPress={handleOpenCapsule}
                   style={styles.button}
-                  disabled={!canOpen}>
+                  disabled={!canOpen}
+                  labelStyle={
+                    !canOpen ? styles.disabledButtonLabel : undefined
+                  }>
                   {canOpen ? 'Kapsülü Aç' : 'Henüz Açılamaz'}
                 </Button>
               )}
@@ -386,6 +389,9 @@ const styles = StyleSheet.create({
   errorText: {
     color: COLORS.error,
     fontStyle: 'italic',
+  },
+  disabledButtonLabel: {
+    color: COLORS.white,
   },
 });
 
