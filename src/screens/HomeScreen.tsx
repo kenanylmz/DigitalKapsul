@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState, useMemo} from 'react';
 
 import {
   View,
@@ -29,6 +29,9 @@ import AnimatedFAB from '../components/AnimatedFAB';
 
 import {loadCapsules} from '../store/capsuleSlice';
 
+import FilterBar from '../components/FilterBar';
+import CapsuleStats from '../components/CapsuleStats';
+
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
 type HomeScreenNavigationProp = NativeStackNavigationProp<
@@ -41,7 +44,40 @@ const HomeScreen = () => {
 
   const dispatch = useDispatch();
 
+  const [selectedCategory, setSelectedCategory] =
+    useState<CapsuleCategory | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const capsules = useSelector((state: RootState) => state.capsules.items);
+
+  const filteredCapsules = useMemo(() => {
+    return capsules.filter(capsule => {
+      const matchesCategory =
+        !selectedCategory ||
+        selectedCategory === 'tümü' ||
+        capsule.category === selectedCategory;
+
+      const matchesSearch =
+        !searchQuery ||
+        capsule.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        capsule.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+      return matchesCategory && matchesSearch;
+    });
+  }, [capsules, selectedCategory, searchQuery]);
+
+  const openedCapsules = useMemo(() => {
+    return capsules.filter(c => !c.isLocked).length;
+  }, [capsules]);
+
+  const nearestCapsule = useMemo(() => {
+    const now = new Date();
+    return capsules
+      .filter(c => c.isLocked && new Date(c.openDate) > now)
+      .sort(
+        (a, b) =>
+          new Date(a.openDate).getTime() - new Date(b.openDate).getTime(),
+      )[0]?.openDate;
+  }, [capsules]);
 
   const loading = useSelector((state: RootState) => state.capsules.loading);
 
@@ -65,6 +101,16 @@ const HomeScreen = () => {
 
   return (
     <View style={styles.container}>
+      <CapsuleStats
+        totalCapsules={capsules.length}
+        openedCapsules={openedCapsules}
+        nearestCapsule={nearestCapsule}
+      />
+      <FilterBar
+        selectedCategory={selectedCategory}
+        onSelectCategory={setSelectedCategory}
+        onSearch={setSearchQuery}
+      />
       {loading ? (
         <View style={[styles.container, styles.centerContent]}>
           <ActivityIndicator size="large" color={COLORS.primary} />
@@ -77,7 +123,7 @@ const HomeScreen = () => {
         renderEmptyList()
       ) : (
         <FlatList
-          data={capsules}
+          data={filteredCapsules}
           keyExtractor={item => item.id}
           renderItem={({item, index}) => (
             <AnimatedCapsuleCard

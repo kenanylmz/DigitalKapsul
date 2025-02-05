@@ -5,6 +5,14 @@ export interface MediaContent {
   base64?: string;
 }
 
+export type CapsuleCategory =
+  | 'tümü'
+  | 'anı'
+  | 'hedef'
+  | 'mesaj'
+  | 'sürpriz'
+  | 'gelecek';
+
 export interface Capsule {
   id: string;
   title: string;
@@ -17,6 +25,9 @@ export interface Capsule {
   createdAt: string;
   isLocked: boolean;
   recipientEmail?: string;
+  category: CapsuleCategory;
+  icon?: string;
+  color?: string;
 }
 
 export interface User {

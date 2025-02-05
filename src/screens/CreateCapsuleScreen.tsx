@@ -6,6 +6,7 @@ import {
   ImageBackground,
   Dimensions,
   Animated,
+  Pressable,
 } from 'react-native';
 import {
   TextInput,
@@ -22,12 +23,13 @@ import {format} from 'date-fns';
 import {tr} from 'date-fns/locale';
 import {COLORS, SPACING, LETTER_FONTS} from '../theme';
 import {addCapsule, saveCapsule} from '../store/capsuleSlice';
-import {Capsule, MediaContent} from '../types';
+import {Capsule, MediaContent, CapsuleCategory} from '../types';
 import MediaPicker from '../components/MediaPicker';
 import CustomDatePicker from '../components/CustomDatePicker';
 import CapsuleAnimation from '../components/CapsuleAnimation';
 import RichTextEditor from '../components/RichTextEditor';
 import SealAnimation from '../components/SealAnimation';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
@@ -50,6 +52,8 @@ const CreateCapsuleScreen = () => {
     [],
   );
   const [showSealAnimation, setShowSealAnimation] = useState(false);
+  const [selectedCategory, setSelectedCategory] =
+    useState<CapsuleCategory>('anı');
 
   const months = [
     'Ocak',
@@ -74,6 +78,50 @@ const CreateCapsuleScreen = () => {
   const [selectedMonth, setSelectedMonth] = useState(openDate.getMonth());
   const [selectedYear, setSelectedYear] = useState(openDate.getFullYear());
 
+  const categories: Array<{
+    id: CapsuleCategory;
+    label: string;
+    icon: string;
+    color: string;
+    description: string;
+  }> = [
+    {
+      id: 'anı',
+      label: 'Anılar',
+      icon: 'camera',
+      color: '#FF6B6B',
+      description: 'Özel anlarınızı saklayın',
+    },
+    {
+      id: 'hedef',
+      label: 'Hedefler',
+      icon: 'target',
+      color: '#4ECDC4',
+      description: 'Gelecek hedeflerinizi belirleyin',
+    },
+    {
+      id: 'mesaj',
+      label: 'Mesajlar',
+      icon: 'message',
+      color: '#FFD93D',
+      description: 'Sevdiklerinize gelecek mesajlar bırakın',
+    },
+    {
+      id: 'gelecek',
+      label: 'Gelecek',
+      icon: 'rocket',
+      color: '#9B59B6',
+      description: 'Geleceğe notlar bırakın',
+    },
+    {
+      id: 'sürpriz',
+      label: 'Sürprizler',
+      icon: 'gift',
+      color: '#6C63FF',
+      description: 'Sürpriz içerikli kapsüller oluşturun',
+    },
+  ];
+
   const handleCreateCapsule = () => {
     setShowSealAnimation(true);
   };
@@ -90,6 +138,7 @@ const CreateCapsuleScreen = () => {
       createdAt: new Date().toISOString(),
       isLocked: true,
       recipientEmail: recipientEmail || undefined,
+      category: selectedCategory,
     };
 
     dispatch(saveCapsule(newCapsule));
@@ -246,6 +295,44 @@ const CreateCapsuleScreen = () => {
                 onChangeText={setRecipientEmail}
                 style={styles.emailInput}
               />
+
+              <Text style={styles.label}>Kategori</Text>
+              <View style={styles.categoryContainer}>
+                {categories.map(({id, label, icon, color, description}) => (
+                  <Pressable
+                    key={id}
+                    onPress={() => setSelectedCategory(id)}
+                    style={[
+                      styles.categoryItem,
+                      selectedCategory === id && {
+                        backgroundColor: `${color}20`,
+                        borderColor: color,
+                      },
+                    ]}>
+                    <View
+                      style={[
+                        styles.iconContainer,
+                        {backgroundColor: `${color}20`},
+                      ]}>
+                      <Icon name={icon} size={24} color={color} />
+                    </View>
+                    <View style={styles.categoryInfo}>
+                      <Text
+                        style={[
+                          styles.categoryLabel,
+                          selectedCategory === id && {color},
+                        ]}>
+                        {label}
+                      </Text>
+                      <Text
+                        style={styles.categoryDescription}
+                        numberOfLines={2}>
+                        {description}
+                      </Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
             </View>
 
             <View style={styles.sealContainer}>
@@ -376,6 +463,47 @@ const styles = StyleSheet.create({
   },
   dateButtonLabel: {
     color: COLORS.letter.text,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.text.primary,
+    marginBottom: SPACING.sm,
+  },
+  categoryContainer: {
+    gap: SPACING.sm,
+    marginBottom: SPACING.lg,
+  },
+  categoryItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: SPACING.sm,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING.md,
+  },
+  categoryInfo: {
+    flex: 1,
+  },
+  categoryLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.text.primary,
+    marginBottom: 4,
+  },
+  categoryDescription: {
+    fontSize: 12,
+    color: COLORS.text.secondary,
+    lineHeight: 16,
   },
 });
 
