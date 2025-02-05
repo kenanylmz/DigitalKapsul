@@ -15,37 +15,36 @@ const CapsuleStats = ({totalCapsules, openedCapsules, nearestCapsule}: CapsuleSt
     <Surface style={styles.container}>
       <View style={styles.row}>
         <View style={styles.statItem}>
-          <View style={[styles.iconBg, {backgroundColor: 'rgba(108, 99, 255, 0.1)'}]}>
-            <Icon name="clock-outline" size={24} color={COLORS.primary} />
-          </View>
+          <Icon name="clock-outline" size={18} color={COLORS.primary} />
           <View>
             <Text style={styles.statValue}>{totalCapsules - openedCapsules}</Text>
-            <Text style={styles.statLabel}>Bekleyen</Text>
+            <Text style={styles.statLabel}>bekleyen</Text>
           </View>
         </View>
         
+        <View style={styles.divider} />
+        
         <View style={styles.statItem}>
-          <View style={[styles.iconBg, {backgroundColor: 'rgba(78, 205, 196, 0.1)'}]}>
-            <Icon name="lock-open-variant" size={24} color="#4ECDC4" />
-          </View>
+          <Icon name="lock-open-variant" size={18} color={COLORS.primary} />
           <View>
             <Text style={styles.statValue}>{openedCapsules}</Text>
-            <Text style={styles.statLabel}>Açılan</Text>
+            <Text style={styles.statLabel}>açılan</Text>
           </View>
         </View>
 
         {nearestCapsule && (
-          <View style={styles.statItem}>
-            <View style={[styles.iconBg, {backgroundColor: 'rgba(255, 217, 61, 0.1)'}]}>
-              <Icon name="calendar-clock" size={24} color="#FFD93D" />
+          <>
+            <View style={styles.divider} />
+            <View style={styles.statItem}>
+              <Icon name="calendar-clock" size={18} color={COLORS.primary} />
+              <View>
+                <Text style={styles.statValue}>
+                  {new Date(nearestCapsule).toLocaleDateString('tr-TR')}
+                </Text>
+                <Text style={styles.statLabel}>yaklaşan</Text>
+              </View>
             </View>
-            <View>
-              <Text style={styles.statValue}>
-                {new Date(nearestCapsule).toLocaleDateString('tr-TR')}
-              </Text>
-              <Text style={styles.statLabel}>Yaklaşan</Text>
-            </View>
-          </View>
+          </>
         )}
       </View>
     </Surface>
@@ -55,35 +54,39 @@ const CapsuleStats = ({totalCapsules, openedCapsules, nearestCapsule}: CapsuleSt
 const styles = StyleSheet.create({
   container: {
     margin: SPACING.md,
-    padding: SPACING.md,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    padding: SPACING.sm,
+    borderRadius: 12,
+    backgroundColor: 'rgba(108, 99, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(108, 99, 255, 0.2)',
   },
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: SPACING.sm,
+    gap: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
   },
-  iconBg: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
+  divider: {
+    width: 1,
+    height: 24,
+    backgroundColor: 'rgba(108, 99, 255, 0.2)',
   },
   statValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 14,
+    fontWeight: '600',
     color: COLORS.text.primary,
+    textAlign: 'center',
   },
   statLabel: {
-    fontSize: 12,
-    color: COLORS.text.secondary,
+    fontSize: 10,
+    color: COLORS.primary,
+    textAlign: 'center',
   },
 });
 
-export default CapsuleStats; 
+export default CapsuleStats;
