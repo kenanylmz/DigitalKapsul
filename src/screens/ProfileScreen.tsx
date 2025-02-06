@@ -3,7 +3,7 @@ import {View, StyleSheet, ScrollView} from 'react-native';
 import {Surface, Text, Avatar, Button} from 'react-native-paper';
 import {COLORS, SPACING} from '../theme';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import {getUserProfile, updateUserProfile} from '../services/firebase/database';
+import {getUserProfile} from '../services/firebase/database';
 import {AuthService} from '../services/firebase/auth';
 import {CustomAlert} from '../components/CustomAlert';
 
@@ -12,7 +12,6 @@ interface UserProfile {
   lastName: string;
   email: string;
   photoURL?: string;
-  bio?: string;
 }
 
 const ProfileScreen = () => {
@@ -65,7 +64,7 @@ const ProfileScreen = () => {
   if (loading) {
     return (
       <View style={styles.container}>
-        <Text>Yükleniyor...</Text>
+        <Text style={styles.loadingText}>Yükleniyor...</Text>
       </View>
     );
   }
@@ -102,17 +101,11 @@ const ProfileScreen = () => {
           </View>
           <View style={styles.divider} />
           <View style={styles.statItem}>
-            <Icon name="calendar" size={24} color={COLORS.primary} />
+            <Icon name="rocket-launch" size={24} color={COLORS.primary} />
             <Text style={styles.statValue}>20</Text>
             <Text style={styles.statLabel}>Toplam</Text>
           </View>
         </View>
-
-        {profile?.bio && (
-          <View style={styles.bioContainer}>
-            <Text style={styles.bioText}>{profile.bio}</Text>
-          </View>
-        )}
 
         <Button
           mode="contained"
@@ -129,13 +122,18 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#1A1A4E', // Ana tema rengi
+  },
+  loadingText: {
+    color: COLORS.white,
+    textAlign: 'center',
+    marginTop: SPACING.xl,
   },
   profileCard: {
     margin: SPACING.md,
     padding: SPACING.lg,
     borderRadius: 16,
-    backgroundColor: 'rgba(30, 31, 34, 0.95)',
+    backgroundColor: 'rgba(108, 99, 255, 0.1)', // Mor tonunda yarı saydam
     borderWidth: 1,
     borderColor: 'rgba(108, 99, 255, 0.2)',
   },
@@ -158,9 +156,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginVertical: SPACING.lg,
-    backgroundColor: 'rgba(108, 99, 255, 0.1)',
+    backgroundColor: 'rgba(108, 99, 255, 0.05)', // Daha koyu arka plan
     padding: SPACING.md,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(108, 99, 255, 0.1)',
   },
   statItem: {
     alignItems: 'center',
@@ -177,18 +177,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     width: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  bioContainer: {
-    marginTop: SPACING.md,
-    padding: SPACING.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 8,
-  },
-  bioText: {
-    fontSize: 14,
-    color: COLORS.text.secondary,
-    lineHeight: 20,
+    backgroundColor: 'rgba(108, 99, 255, 0.2)',
   },
   logoutButton: {
     marginTop: SPACING.lg,
