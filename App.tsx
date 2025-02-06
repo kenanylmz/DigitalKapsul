@@ -14,6 +14,7 @@ import {store} from './src/store';
 import Navigation from './src/navigation';
 import {COLORS} from './src/theme';
 import {AuthProvider} from './src/context/AuthContext';
+import CustomAlertComponent from './src/components/CustomAlert';
 
 const theme = {
   colors: {
@@ -34,6 +35,7 @@ function App(): React.JSX.Element {
           <NavigationContainer>
             <AuthProvider>
               <Navigation />
+              <CustomAlertComponent />
             </AuthProvider>
           </NavigationContainer>
         </SafeAreaProvider>
