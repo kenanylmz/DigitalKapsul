@@ -8,27 +8,33 @@ import CreateCapsuleScreen from '../screens/CreateCapsuleScreen';
 import CapsuleDetailScreen from '../screens/CapsuleDetailScreen';
 import OpenCapsuleScreen from '../screens/OpenCapsuleScreen';
 import {COLORS} from '../theme';
+import {CustomAlert} from '../components/CustomAlert';
 
-export type RootStackParamList = {
-  Login: undefined;
-  Register: undefined;
-  Home: undefined;
-  CreateCapsule: undefined;
-  CapsuleDetail: {capsuleId: string};
-  OpenCapsule: {capsule: any};
-  VerificationScreen: {email: string};
-};
-
-const Stack = createNativeStackNavigator<RootStackParamList>();
+const Stack = createNativeStackNavigator();
 
 const Navigation = () => {
   const [initializing, setInitializing] = useState(true);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const subscriber = auth().onAuthStateChanged(userState => {
-      setUser(userState);
-      if (initializing) setInitializing(false);
+    const subscriber = auth().onAuthStateChanged(async userState => {
+      if (userState) {
+        // Kullanıcı bilgilerini yenile
+        await userState.reload();
+
+        // Doğrulanmış kullanıcıyı kaydet
+        if (userState.emailVerified) {
+          setUser(userState);
+        } else {
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+
+      if (initializing) {
+        setInitializing(false);
+      }
     });
 
     return () => subscriber();
@@ -48,7 +54,6 @@ const Navigation = () => {
         },
       }}>
       {!user ? (
-        // Auth screens
         <>
           <Stack.Screen
             name="Login"
@@ -62,7 +67,6 @@ const Navigation = () => {
           />
         </>
       ) : (
-        // App screens
         <>
           <Stack.Screen
             name="Home"

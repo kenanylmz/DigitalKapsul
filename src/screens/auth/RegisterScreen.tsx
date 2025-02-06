@@ -15,6 +15,7 @@ import {COLORS, SPACING} from '../../theme';
 import {useNavigation} from '@react-navigation/native';
 import AuthCardAnimation from '../../animations/AuthCardAnimation';
 import {useAuth} from '../../context/AuthContext';
+import {CustomAlert} from '../../components/CustomAlert';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
@@ -41,7 +42,32 @@ const RegisterScreen = () => {
       setLoading(true);
       setError('');
       await AuthService.register(email, password);
-      navigation.navigate('VerificationScreen', {email});
+
+      CustomAlert.show({
+        title: 'Hesap Oluşturuldu!',
+        message:
+          'Tebrikler! Hesabınız başarıyla oluşturuldu. Lütfen e-posta adresinize gönderilen doğrulama bağlantısını kontrol edin.',
+        icon: 'email-check-outline',
+        buttons: [
+          {
+            text: 'Giriş Yap',
+            style: 'primary',
+            icon: 'login',
+            onPress: () => {
+              CustomAlert.hide();
+              setIsFlipped(true);
+              navigation.navigate('Login');
+            },
+          },
+        ],
+      });
+
+      // 5 saniye sonra otomatik yönlendirme
+      setTimeout(() => {
+        CustomAlert.hide();
+        setIsFlipped(true);
+        navigation.navigate('Login');
+      }, 5000);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -70,7 +96,12 @@ const RegisterScreen = () => {
 
           <View style={styles.form}>
             <View style={styles.inputWrapper}>
-              <Icon name="account" size={20} color={COLORS.primary} style={styles.inputIcon} />
+              <Icon
+                name="account"
+                size={20}
+                color={COLORS.primary}
+                style={styles.inputIcon}
+              />
               <TextInput
                 placeholder="Ad"
                 value={firstName}
@@ -81,7 +112,12 @@ const RegisterScreen = () => {
             </View>
 
             <View style={styles.inputWrapper}>
-              <Icon name="account-outline" size={20} color={COLORS.primary} style={styles.inputIcon} />
+              <Icon
+                name="account-outline"
+                size={20}
+                color={COLORS.primary}
+                style={styles.inputIcon}
+              />
               <TextInput
                 placeholder="Soyad"
                 value={lastName}
@@ -92,7 +128,12 @@ const RegisterScreen = () => {
             </View>
 
             <View style={styles.inputWrapper}>
-              <Icon name="email" size={20} color={COLORS.primary} style={styles.inputIcon} />
+              <Icon
+                name="email"
+                size={20}
+                color={COLORS.primary}
+                style={styles.inputIcon}
+              />
               <TextInput
                 placeholder="E-posta"
                 value={email}
@@ -105,7 +146,12 @@ const RegisterScreen = () => {
             </View>
 
             <View style={styles.inputWrapper}>
-              <Icon name="lock" size={20} color={COLORS.primary} style={styles.inputIcon} />
+              <Icon
+                name="lock"
+                size={20}
+                color={COLORS.primary}
+                style={styles.inputIcon}
+              />
               <TextInput
                 placeholder="Şifre"
                 value={password}
@@ -114,7 +160,9 @@ const RegisterScreen = () => {
                 style={styles.input}
                 placeholderTextColor="rgba(255,255,255,0.5)"
               />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeIcon}>
                 <Icon
                   name={showPassword ? 'eye-off' : 'eye'}
                   size={20}
@@ -124,7 +172,12 @@ const RegisterScreen = () => {
             </View>
 
             <View style={styles.inputWrapper}>
-              <Icon name="lock-check" size={20} color={COLORS.primary} style={styles.inputIcon} />
+              <Icon
+                name="lock-check"
+                size={20}
+                color={COLORS.primary}
+                style={styles.inputIcon}
+              />
               <TextInput
                 placeholder="Şifre Tekrar"
                 value={confirmPassword}
@@ -133,7 +186,9 @@ const RegisterScreen = () => {
                 style={styles.input}
                 placeholderTextColor="rgba(255,255,255,0.5)"
               />
-              <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeIcon}>
+              <TouchableOpacity
+                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                style={styles.eyeIcon}>
                 <Icon
                   name={showConfirmPassword ? 'eye-off' : 'eye'}
                   size={20}
