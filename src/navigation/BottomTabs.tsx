@@ -20,14 +20,15 @@ const BottomTabs = () => {
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.text.secondary,
         headerStyle: {
-          backgroundColor: COLORS.background,
+          backgroundColor: '#1A1A4E',
           borderBottomWidth: 1,
           borderBottomColor: 'rgba(108, 99, 255, 0.2)',
         },
         headerTintColor: COLORS.white,
+        headerLeft: () => null,
       }}>
       <Tab.Screen
-        name="Home"
+        name="HomeTab"
         component={HomeScreen}
         options={{
           title: 'Dijital Kapsül',

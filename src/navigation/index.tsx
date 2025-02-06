@@ -3,7 +3,6 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import auth from '@react-native-firebase/auth';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
-import HomeScreen from '../screens/HomeScreen';
 import CreateCapsuleScreen from '../screens/CreateCapsuleScreen';
 import CapsuleDetailScreen from '../screens/CapsuleDetailScreen';
 import OpenCapsuleScreen from '../screens/OpenCapsuleScreen';
@@ -20,10 +19,7 @@ const Navigation = () => {
   useEffect(() => {
     const subscriber = auth().onAuthStateChanged(async userState => {
       if (userState) {
-        // Kullanıcı bilgilerini yenile
         await userState.reload();
-
-        // Doğrulanmış kullanıcıyı kaydet
         if (userState.emailVerified) {
           setUser(userState);
         } else {
@@ -53,6 +49,7 @@ const Navigation = () => {
         headerTitleStyle: {
           fontWeight: 'bold',
         },
+        headerLeft: () => null,
       }}>
       {!user ? (
         <>

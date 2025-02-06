@@ -84,19 +84,6 @@ const HomeScreen = () => {
     dispatch(loadCapsules());
   }, [dispatch]);
 
-  React.useLayoutEffect(() => {
-    navigation.setOptions({
-      headerLeft: () => (
-        <IconButton
-          icon="arrow-left"
-          iconColor={COLORS.white}
-          size={24}
-          onPress={() => navigation.goBack()}
-        />
-      ),
-    });
-  }, [navigation]);
-
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIconContainer}>
@@ -157,7 +144,7 @@ const HomeScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1A1A2E',
+    backgroundColor: '#1A1A4E',
   },
   listContainer: {
     padding: SPACING.sm,
