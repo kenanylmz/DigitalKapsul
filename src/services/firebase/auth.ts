@@ -1,18 +1,60 @@
 import auth from '@react-native-firebase/auth';
+import database from '@react-native-firebase/database';
 import {Alert} from 'react-native';
 import {CustomAlert} from '../../components/CustomAlert';
+import {firebase} from './config';
 
 export const AuthService = {
-  register: async (email: string, password: string) => {
+  register: async (
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string,
+  ) => {
     try {
+      console.log('AuthService register values:', {
+        // Debug için
+        email,
+        password,
+        firstName,
+        lastName,
+      });
+
+      if (!firstName || !lastName) {
+        console.log('firstName or lastName is empty'); // Debug için
+        throw new Error('Ad ve soyad alanları zorunludur.');
+      }
+
       const userCredential = await auth().createUserWithEmailAndPassword(
         email,
         password,
       );
+
+      try {
+        // Realtime Database'e kullanıcı profilini kaydet
+        const profileData = {
+          firstName,
+          lastName,
+          email,
+          createdAt: new Date().toISOString(),
+        };
+
+        console.log('Saving profile data:', profileData); // Debug için
+
+        await database()
+          .ref(`users/${userCredential.user.uid}/profile`)
+          .set(profileData);
+      } catch (dbError) {
+        console.error('Database error:', dbError); // Debug için
+        await userCredential.user.delete();
+        throw new Error('Profil oluşturulurken bir hata oluştu.');
+      }
+
       await userCredential.user.sendEmailVerification();
       await auth().signOut();
       return userCredential.user;
     } catch (error: any) {
+      console.error('Auth error:', error); // Debug için
       throw new Error(error.message);
     }
   },

@@ -9,6 +9,7 @@ import CapsuleDetailScreen from '../screens/CapsuleDetailScreen';
 import OpenCapsuleScreen from '../screens/OpenCapsuleScreen';
 import {COLORS} from '../theme';
 import {CustomAlert} from '../components/CustomAlert';
+import BottomTabs from './BottomTabs';
 
 const Stack = createNativeStackNavigator();
 
@@ -69,9 +70,9 @@ const Navigation = () => {
       ) : (
         <>
           <Stack.Screen
-            name="Home"
-            component={HomeScreen}
-            options={{title: 'Dijital Kapsül'}}
+            name="MainTabs"
+            component={BottomTabs}
+            options={{headerShown: false}}
           />
           <Stack.Screen
             name="CreateCapsule"
