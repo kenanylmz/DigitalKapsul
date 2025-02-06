@@ -9,9 +9,11 @@ import React from 'react';
 import {Provider as PaperProvider} from 'react-native-paper';
 import {Provider as StoreProvider} from 'react-redux';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
+import {NavigationContainer} from '@react-navigation/native';
 import {store} from './src/store';
 import Navigation from './src/navigation';
 import {COLORS} from './src/theme';
+import {AuthProvider} from './src/context/AuthContext';
 
 const theme = {
   colors: {
@@ -29,7 +31,11 @@ function App(): React.JSX.Element {
     <StoreProvider store={store}>
       <PaperProvider theme={theme}>
         <SafeAreaProvider>
-          <Navigation />
+          <NavigationContainer>
+            <AuthProvider>
+              <Navigation />
+            </AuthProvider>
+          </NavigationContainer>
         </SafeAreaProvider>
       </PaperProvider>
     </StoreProvider>
