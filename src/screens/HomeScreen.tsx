@@ -9,7 +9,7 @@ import {
   Dimensions,
 } from 'react-native';
 
-import {ActivityIndicator, Surface} from 'react-native-paper';
+import {ActivityIndicator, Surface, IconButton} from 'react-native-paper';
 
 import {useNavigation} from '@react-navigation/native';
 
@@ -34,10 +34,7 @@ import CapsuleStats from '../components/CapsuleStats';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
-type HomeScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  'Home'
->;
+type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const HomeScreen = () => {
   const navigation = useNavigation<HomeScreenNavigationProp>();
@@ -86,6 +83,19 @@ const HomeScreen = () => {
   useEffect(() => {
     dispatch(loadCapsules());
   }, [dispatch]);
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        <IconButton
+          icon="arrow-left"
+          iconColor={COLORS.white}
+          size={24}
+          onPress={() => navigation.goBack()}
+        />
+      ),
+    });
+  }, [navigation]);
 
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
