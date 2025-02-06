@@ -41,7 +41,21 @@ const RegisterScreen = () => {
 
       setLoading(true);
       setError('');
-      await AuthService.register(email, password);
+
+      console.log('Register values:', {
+        // Debug için
+        email,
+        password,
+        firstName,
+        lastName,
+      });
+
+      await AuthService.register(
+        email.trim(),
+        password.trim(),
+        firstName.trim(),
+        lastName.trim(),
+      );
 
       CustomAlert.show({
         title: 'Hesap Oluşturuldu!',
@@ -69,6 +83,7 @@ const RegisterScreen = () => {
         navigation.navigate('Login');
       }, 5000);
     } catch (err: any) {
+      console.error('Register error:', err); // Debug için
       setError(err.message);
     } finally {
       setLoading(false);
