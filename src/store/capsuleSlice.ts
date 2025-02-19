@@ -1,18 +1,19 @@
 import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
-import {Capsule} from '../types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {DatabaseService} from '../services/firebase/database';
 
 export interface Capsule {
   id: string;
   title: string;
   description: string;
   content: string;
-  type: 'text' | 'image' | 'video';
+  contentType: 'text' | 'image' | 'video';
+  capsuleType: 'self' | 'sent' | 'received';
   mediaUrl?: string;
   openDate: string;
   createdAt: string;
   isLocked: boolean;
   recipientEmail?: string;
+  senderEmail?: string;
 }
 
 interface CapsuleState {
@@ -27,63 +28,54 @@ const initialState: CapsuleState = {
   error: null,
 };
 
-// Thunk'ın ismini değiştirdik
-export const saveCapsule = createAsyncThunk(
-  'capsules/save',
-  async (capsule: Omit<Capsule, 'id'>) => {
+// Async thunks
+export const createCapsule = createAsyncThunk(
+  'capsules/create',
+  async (capsule: Omit<Capsule, 'id'>, {rejectWithValue}) => {
     try {
-      const existingCapsules = await AsyncStorage.getItem('capsules');
-      const capsules = existingCapsules ? JSON.parse(existingCapsules) : [];
-
-      const newCapsule = {
-        ...capsule,
-        id: Date.now().toString(),
-      };
-
-      capsules.push(newCapsule);
-      await AsyncStorage.setItem('capsules', JSON.stringify(capsules));
-
-      return newCapsule;
-    } catch (error) {
-      console.error('Kapsül kaydetme hatası:', error);
-      throw error;
+      const result = await DatabaseService.createCapsule(capsule);
+      return result;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Kapsül oluşturulamadı');
     }
   },
 );
 
 export const loadCapsules = createAsyncThunk('capsules/load', async () => {
-  try {
-    const capsules = await AsyncStorage.getItem('capsules');
-    return capsules ? JSON.parse(capsules) : [];
-  } catch (error) {
-    console.error('Kapsüller yüklenirken hata:', error);
-    throw error;
-  }
+  return await DatabaseService.getUserCapsules();
 });
+
+export const updateCapsule = createAsyncThunk(
+  'capsules/update',
+  async (capsule: Capsule, {rejectWithValue}) => {
+    try {
+      const result = await DatabaseService.updateCapsule(capsule);
+      return result;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Kapsül güncellenemedi');
+    }
+  },
+);
+
+export const deleteCapsule = createAsyncThunk(
+  'capsules/delete',
+  async (capsuleId: string, {rejectWithValue}) => {
+    try {
+      await DatabaseService.deleteCapsule(capsuleId);
+      return capsuleId;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Kapsül silinemedi');
+    }
+  },
+);
 
 const capsuleSlice = createSlice({
   name: 'capsules',
   initialState,
-  reducers: {
-    addCapsule: (state, action) => {
-      state.items.push(action.payload);
-    },
-    removeCapsule: (state, action) => {
-      state.items = state.items.filter(
-        capsule => capsule.id !== action.payload,
-      );
-    },
-    updateCapsule: (state, action) => {
-      const index = state.items.findIndex(
-        capsule => capsule.id === action.payload.id,
-      );
-      if (index !== -1) {
-        state.items[index] = action.payload;
-      }
-    },
-  },
+  reducers: {},
   extraReducers: builder => {
     builder
+      // Load capsules
       .addCase(loadCapsules.pending, state => {
         state.loading = true;
         state.error = null;
@@ -96,14 +88,54 @@ const capsuleSlice = createSlice({
         state.loading = false;
         state.error = action.error.message || 'Kapsüller yüklenemedi';
       })
-      .addCase(saveCapsule.fulfilled, (state, action) => {
-        state.items.push(action.payload);
+      // Create capsule
+      .addCase(createCapsule.pending, state => {
+        state.loading = true;
+        state.error = null;
       })
-      .addCase(saveCapsule.rejected, (state, action) => {
-        state.error = action.error.message || 'Kapsül eklenemedi';
+      .addCase(createCapsule.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items.push(action.payload);
+        state.error = null;
+      })
+      .addCase(createCapsule.rejected, (state, action) => {
+        state.loading = false;
+        state.error = (action.payload as string) || 'Kapsül oluşturulamadı';
+      })
+      // Update capsule
+      .addCase(updateCapsule.pending, state => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateCapsule.fulfilled, (state, action) => {
+        state.loading = false;
+        const index = state.items.findIndex(
+          item => item.id === action.payload.id,
+        );
+        if (index !== -1) {
+          state.items[index] = action.payload;
+        }
+        state.error = null;
+      })
+      .addCase(updateCapsule.rejected, (state, action) => {
+        state.loading = false;
+        state.error = (action.payload as string) || 'Kapsül güncellenemedi';
+      })
+      // Delete capsule
+      .addCase(deleteCapsule.pending, state => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteCapsule.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = state.items.filter(item => item.id !== action.payload);
+        state.error = null;
+      })
+      .addCase(deleteCapsule.rejected, (state, action) => {
+        state.loading = false;
+        state.error = (action.payload as string) || 'Kapsül silinemedi';
       });
   },
 });
 
-export const {addCapsule, removeCapsule, updateCapsule} = capsuleSlice.actions;
 export default capsuleSlice.reducer;

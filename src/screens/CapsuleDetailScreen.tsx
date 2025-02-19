@@ -15,11 +15,16 @@ import {format} from 'date-fns';
 import {tr} from 'date-fns/locale';
 import {RootStackParamList} from '../navigation/AppNavigator';
 import {RootState} from '../store';
-import {removeCapsule, updateCapsule} from '../store/capsuleSlice';
+import {
+  removeCapsule,
+  updateCapsule,
+  deleteCapsule,
+} from '../store/capsuleSlice';
 import {COLORS, SPACING} from '../theme';
 import Video from 'react-native-video';
 import CapsuleAnimation from '../components/CapsuleAnimation';
 import LinearGradient from 'react-native-linear-gradient';
+import {CustomAlert} from '../components/CustomAlert';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
@@ -55,20 +60,42 @@ const CapsuleDetailScreen = ({route, navigation}) => {
   }
 
   const handleDelete = () => {
-    setShowDeleteAnimation(true);
-  };
-
-  const handleDeleteAnimationComplete = () => {
-    dispatch(removeCapsule(capsule.id));
-    navigation.goBack();
-  };
-
-  const canOpen = new Date(capsule.openDate) <= new Date();
-
-  const handleOpenCapsule = () => {
-    if (canOpen) {
-      setShowAnimation(true);
-    }
+    CustomAlert.show({
+      title: 'Kapsülü Sil',
+      message: 'Bu kapsülü silmek istediğinize emin misiniz?',
+      icon: 'alert',
+      buttons: [
+        {
+          text: 'İptal',
+          style: 'cancel',
+          onPress: () => CustomAlert.hide(),
+        },
+        {
+          text: 'Sil',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await dispatch(deleteCapsule(capsule.id)).unwrap();
+              CustomAlert.hide();
+              navigation.goBack();
+            } catch (error: any) {
+              CustomAlert.show({
+                title: 'Hata',
+                message: error.message || 'Kapsül silinirken bir hata oluştu.',
+                icon: 'alert-circle',
+                buttons: [
+                  {
+                    text: 'Tamam',
+                    style: 'primary',
+                    onPress: () => CustomAlert.hide(),
+                  },
+                ],
+              });
+            }
+          },
+        },
+      ],
+    });
   };
 
   const handleAnimationComplete = () => {
@@ -79,6 +106,14 @@ const CapsuleDetailScreen = ({route, navigation}) => {
         isLocked: false,
       }),
     );
+  };
+
+  const canOpen = new Date(capsule.openDate) <= new Date();
+
+  const handleOpenCapsule = () => {
+    if (canOpen) {
+      setShowAnimation(true);
+    }
   };
 
   return (
@@ -218,12 +253,6 @@ const CapsuleDetailScreen = ({route, navigation}) => {
         <CapsuleAnimation
           type="open"
           onAnimationComplete={handleAnimationComplete}
-        />
-      )}
-      {showDeleteAnimation && (
-        <CapsuleAnimation
-          type="delete"
-          onAnimationComplete={handleDeleteAnimationComplete}
         />
       )}
     </View>
