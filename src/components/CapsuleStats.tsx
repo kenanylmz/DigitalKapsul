@@ -7,23 +7,29 @@ import {COLORS, SPACING} from '../theme';
 interface CapsuleStatsProps {
   totalCapsules: number;
   openedCapsules: number;
-  nearestCapsule?: Date;
+  nearestCapsule?: string;
 }
 
-const CapsuleStats = ({totalCapsules, openedCapsules, nearestCapsule}: CapsuleStatsProps) => {
+const CapsuleStats = ({
+  totalCapsules,
+  openedCapsules,
+  nearestCapsule,
+}: CapsuleStatsProps) => {
   return (
     <Surface style={styles.container}>
       <View style={styles.row}>
         <View style={styles.statItem}>
           <Icon name="clock-outline" size={18} color={COLORS.primary} />
           <View>
-            <Text style={styles.statValue}>{totalCapsules - openedCapsules}</Text>
+            <Text style={styles.statValue}>
+              {totalCapsules - openedCapsules}
+            </Text>
             <Text style={styles.statLabel}>bekleyen</Text>
           </View>
         </View>
-        
+
         <View style={styles.divider} />
-        
+
         <View style={styles.statItem}>
           <Icon name="lock-open-variant" size={18} color={COLORS.primary} />
           <View>

@@ -48,39 +48,59 @@ export const DatabaseService = {
   },
 
   // Kapsül oluşturma
-  createCapsule: async (capsule: Omit<Capsule, 'id'>) => {
+  createCapsule: async (capsuleData: Omit<Capsule, 'id'>) => {
     try {
       const user = auth().currentUser;
       if (!user) throw new Error('Kullanıcı bulunamadı');
 
-      // Kapsül referansını oluştur
+      // Önce users referansını oluştur
+      const userRef = database().ref(`users/${user.uid}`);
+
+      // Aynı kapsülün daha önce oluşturulup oluşturulmadığını kontrol et
+      const existingCapsules = await database()
+        .ref('capsules')
+        .orderByChild('createdAt')
+        .equalTo(capsuleData.createdAt)
+        .once('value');
+
+      if (existingCapsules.exists()) {
+        throw new Error('Bu kapsül zaten oluşturulmuş');
+      }
+
+      // Yeni kapsül referansı oluştur
       const newCapsuleRef = database().ref('capsules').push();
       const capsuleId = newCapsuleRef.key;
 
-      if (!capsuleId) {
-        throw new Error('Kapsül ID oluşturulamadı');
-      }
+      if (!capsuleId) throw new Error('Kapsül ID oluşturulamadı');
 
-      // Kapsül verisini hazırla
-      const capsuleData = {
-        ...capsule,
+      const capsule = {
+        ...capsuleData,
         id: capsuleId,
         senderId: user.uid,
         senderEmail: user.email,
-        status: 'active',
-        createdAt: database.ServerValue.TIMESTAMP,
+        createdAt: new Date().toISOString(),
       };
 
-      // Transaction kullanarak atomik işlem yap
-      await database()
-        .ref()
-        .update({
-          [`capsules/${capsuleId}`]: capsuleData,
-          [`users/${user.uid}/sentCapsules/${capsuleId}`]: true,
-        });
+      // Tüm güncellemeleri bir transaction içinde yap
+      const updates: {[key: string]: any} = {};
 
-      // Alıcı varsa ve kendisi değilse
-      if (capsule.recipientEmail && capsule.recipientEmail !== user.email) {
+      // Kapsül verisini kaydet
+      updates[`capsules/${capsuleId}`] = capsule;
+
+      // Kullanıcının gönderilen kapsüllerine ekle
+      updates[`users/${user.uid}/sentCapsules/${capsuleId}`] = {
+        createdAt: capsule.createdAt,
+        type: capsule.type,
+      };
+
+      if (capsule.capsuleType === 'self') {
+        // Kendine gönderilen kapsül için alınan kapsüllere de ekle
+        updates[`users/${user.uid}/receivedCapsules/${capsuleId}`] = {
+          createdAt: capsule.createdAt,
+          type: capsule.type,
+        };
+      } else if (capsule.capsuleType === 'sent' && capsule.recipientEmail) {
+        // Alıcıyı bul
         const recipientSnapshot = await database()
           .ref('users')
           .orderByChild('profile/email')
@@ -90,14 +110,18 @@ export const DatabaseService = {
         const recipientData = recipientSnapshot.val();
         if (recipientData) {
           const recipientId = Object.keys(recipientData)[0];
-          await database()
-            .ref(`users/${recipientId}/receivedCapsules/${capsuleId}`)
-            .set(true);
+          // Alıcının kapsüllerine ekle
+          updates[`users/${recipientId}/receivedCapsules/${capsuleId}`] = {
+            createdAt: capsule.createdAt,
+            type: capsule.type,
+          };
         }
       }
 
-      // Başarılı işlem sonrası kapsül verisini döndür
-      return capsuleData;
+      // Tüm güncellemeleri tek seferde yap
+      await database().ref().update(updates);
+
+      return capsule;
     } catch (error) {
       console.error('Kapsül oluşturma hatası:', error);
       throw error;

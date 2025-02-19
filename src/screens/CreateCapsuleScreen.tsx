@@ -22,7 +22,7 @@ import {useDispatch} from 'react-redux';
 import {format} from 'date-fns';
 import {tr} from 'date-fns/locale';
 import {COLORS, SPACING, LETTER_FONTS} from '../theme';
-import {addCapsule, saveCapsule, createCapsule} from '../store/capsuleSlice';
+import {createCapsule} from '../store/capsuleSlice';
 import {Capsule, MediaContent, CapsuleCategory} from '../types';
 import MediaPicker from '../components/MediaPicker';
 import CustomDatePicker from '../components/CustomDatePicker';
@@ -61,6 +61,7 @@ const CreateCapsuleScreen = () => {
   const [recipientType, setRecipientType] = useState<'self' | 'other'>('self');
   const [isCheckingUser, setIsCheckingUser] = useState(false);
   const [userExists, setUserExists] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   const months = [
     'Ocak',
@@ -160,6 +161,8 @@ const CreateCapsuleScreen = () => {
 
   // Kapsül oluşturma
   const handleCreateCapsule = async () => {
+    if (isCreating) return;
+
     if (!isFormValid()) {
       CustomAlert.show({
         title: 'Hata',
@@ -177,10 +180,10 @@ const CreateCapsuleScreen = () => {
     }
 
     try {
+      setIsCreating(true);
       setIsSubmitting(true);
-      setShowSealAnimation(true);
 
-      const capsuleData = {
+      const capsuleData: Omit<Capsule, 'id'> = {
         title,
         description,
         content: type === 'text' ? content : '',
@@ -188,66 +191,34 @@ const CreateCapsuleScreen = () => {
         mediaUrl: mediaContent?.uri,
         mediaContent,
         openDate: openDate.toISOString(),
+        createdAt: new Date().toISOString(),
         isLocked: true,
         recipientEmail:
           recipientType === 'self' ? auth().currentUser?.email : recipientEmail,
         category: selectedCategory,
+        capsuleType: recipientType === 'self' ? 'self' : 'sent',
       };
 
       const result = await dispatch(createCapsule(capsuleData)).unwrap();
 
       if (result) {
-        // Başarılı oluşturma sonrası animasyonu göster
         setShowAnimation(true);
-
-        // Animasyon bitiminde ana sayfaya dön
-        setTimeout(() => {
-          navigation.goBack();
-        }, 2000);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Kapsül oluşturma hatası:', error);
-
       CustomAlert.show({
         title: 'Hata',
-        message: error.message || 'Kapsül oluşturulurken bir hata oluştu.',
-        icon: 'alert-circle',
-        buttons: [
-          {
-            text: 'Tamam',
-            style: 'primary',
-            onPress: () => CustomAlert.hide(),
-          },
-        ],
+        message:
+          'Kapsül oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.',
       });
-    } finally {
       setIsSubmitting(false);
-      setShowSealAnimation(false);
+    } finally {
+      setIsCreating(false);
     }
   };
 
   const handleSealAnimationComplete = () => {
-    const newCapsule: Omit<Capsule, 'id'> = {
-      title,
-      description,
-      content: type === 'text' ? content : '',
-      type,
-      mediaUrl: mediaContent?.uri,
-      mediaContent: mediaContent,
-      openDate: openDate.toISOString(),
-      createdAt: new Date().toISOString(),
-      isLocked: true,
-      recipientEmail: recipientEmail || undefined,
-      category: selectedCategory,
-    };
-
-    try {
-      dispatch(saveCapsule(newCapsule));
-      setShowAnimation(true);
-    } catch (error) {
-      console.error('Kapsül kaydetme hatası:', error);
-      setIsSubmitting(false);
-    }
+    handleCreateCapsule();
   };
 
   const handleAnimationComplete = () => {

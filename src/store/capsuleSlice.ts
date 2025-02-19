@@ -6,7 +6,8 @@ export interface Capsule {
   title: string;
   description: string;
   content: string;
-  contentType: 'text' | 'image' | 'video';
+  type: 'text' | 'image' | 'video';
+  category: CapsuleCategory;
   capsuleType: 'self' | 'sent' | 'received';
   mediaUrl?: string;
   openDate: string;
@@ -14,6 +15,7 @@ export interface Capsule {
   isLocked: boolean;
   recipientEmail?: string;
   senderEmail?: string;
+  senderId?: string;
 }
 
 interface CapsuleState {
@@ -29,21 +31,31 @@ const initialState: CapsuleState = {
 };
 
 // Async thunks
-export const createCapsule = createAsyncThunk(
+export const createCapsule = createAsyncThunk<Capsule, Omit<Capsule, 'id'>>(
   'capsules/create',
-  async (capsule: Omit<Capsule, 'id'>, {rejectWithValue}) => {
+  async (capsuleData, {rejectWithValue}) => {
     try {
-      const result = await DatabaseService.createCapsule(capsule);
+      // Eksik alanları kontrol et
+      if (!capsuleData.capsuleType || !capsuleData.createdAt) {
+        throw new Error('Gerekli alanlar eksik');
+      }
+
+      const result = await DatabaseService.createCapsule(capsuleData);
       return result;
     } catch (error: any) {
-      return rejectWithValue(error.message || 'Kapsül oluşturulamadı');
+      return rejectWithValue(
+        error.message || 'Kapsül oluşturulurken bir hata oluştu',
+      );
     }
   },
 );
 
-export const loadCapsules = createAsyncThunk('capsules/load', async () => {
-  return await DatabaseService.getUserCapsules();
-});
+export const loadCapsules = createAsyncThunk<Capsule[], void>(
+  'capsules/load',
+  async () => {
+    return await DatabaseService.getUserCapsules();
+  },
+);
 
 export const updateCapsule = createAsyncThunk(
   'capsules/update',
