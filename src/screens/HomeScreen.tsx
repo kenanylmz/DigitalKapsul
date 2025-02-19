@@ -1,141 +1,96 @@
-import React, {useEffect, useState, useMemo} from 'react';
-
-import {
-  View,
-  StyleSheet,
-  FlatList,
-  Text,
-  ImageBackground,
-  Dimensions,
-} from 'react-native';
-
-import {ActivityIndicator, Surface, IconButton} from 'react-native-paper';
-
-import {useNavigation} from '@react-navigation/native';
-
-import {NativeStackNavigationProp} from '@react-navigation/native-stack';
-
+import React, {useEffect, useState} from 'react';
+import {View, StyleSheet, Text, TouchableOpacity} from 'react-native';
+import {ActivityIndicator} from 'react-native-paper';
 import {useSelector, useDispatch} from 'react-redux';
-
-import {RootStackParamList} from '../navigation/AppNavigator';
-
+import {NativeStackNavigationProp} from '@react-navigation/native-stack';
 import {RootState} from '../store';
-
 import {COLORS, SPACING} from '../theme';
-
-import AnimatedCapsuleCard from '../components/AnimatedCapsuleCard';
-
 import AnimatedFAB from '../components/AnimatedFAB';
-
 import {loadCapsules} from '../store/capsuleSlice';
-
-import FilterBar from '../components/FilterBar';
 import CapsuleStats from '../components/CapsuleStats';
+import CapsuleList from '../components/CapsuleList';
 
-const {width: SCREEN_WIDTH} = Dimensions.get('window');
+type TabType = 'personal' | 'sent' | 'received';
 
-type HomeScreenNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type RootStackParamList = {
+  CapsuleDetail: {capsuleId: string};
+  CreateCapsule: undefined;
+};
 
-const HomeScreen = () => {
-  const navigation = useNavigation<HomeScreenNavigationProp>();
+type Props = {
+  navigation: NativeStackNavigationProp<RootStackParamList>;
+};
 
+const HomeScreen = ({navigation}: Props) => {
   const dispatch = useDispatch();
+  const [activeTab, setActiveTab] = useState<TabType>('personal');
 
-  const [selectedCategory, setSelectedCategory] =
-    useState<CapsuleCategory | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const capsules = useSelector((state: RootState) => state.capsules.items);
-
-  const filteredCapsules = useMemo(() => {
-    return capsules.filter(capsule => {
-      const matchesCategory =
-        !selectedCategory ||
-        selectedCategory === 'tümü' ||
-        capsule.category === selectedCategory;
-
-      const matchesSearch =
-        !searchQuery ||
-        capsule.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        capsule.description.toLowerCase().includes(searchQuery.toLowerCase());
-
-      return matchesCategory && matchesSearch;
-    });
-  }, [capsules, selectedCategory, searchQuery]);
-
-  const openedCapsules = useMemo(() => {
-    return capsules.filter(c => !c.isLocked).length;
-  }, [capsules]);
-
-  const nearestCapsule = useMemo(() => {
-    const now = new Date();
-    return capsules
-      .filter(c => c.isLocked && new Date(c.openDate) > now)
-      .sort(
-        (a, b) =>
-          new Date(a.openDate).getTime() - new Date(b.openDate).getTime(),
-      )[0]?.openDate;
-  }, [capsules]);
-
   const loading = useSelector((state: RootState) => state.capsules.loading);
 
-  const error = useSelector((state: RootState) => state.capsules.error);
+  const categorizedCapsules: Record<TabType, typeof capsules> = {
+    personal: capsules.filter(c => c.capsuleType === 'self'),
+    sent: capsules.filter(c => c.capsuleType === 'sent'),
+    received: capsules.filter(c => c.capsuleType === 'received'),
+  };
 
   useEffect(() => {
-    dispatch(loadCapsules());
+    dispatch(loadCapsules() as any); // Geçici çözüm, daha sonra düzeltilecek
   }, [dispatch]);
 
-  const renderEmptyList = () => (
-    <View style={styles.emptyContainer}>
-      <View style={styles.emptyIconContainer}>
-        <Text style={styles.emptyIcon}>📬</Text>
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
       </View>
-      <Text style={styles.emptyText}>Henüz hiç kapsül oluşturmadınız.</Text>
-      <Text style={styles.emptySubText}>
-        Yeni bir kapsül oluşturmak için + butonuna tıklayın.
-      </Text>
-    </View>
-  );
+    );
+  }
+
+  const tabs: TabType[] = ['personal', 'sent', 'received'];
 
   return (
     <View style={styles.container}>
       <CapsuleStats
         totalCapsules={capsules.length}
-        openedCapsules={openedCapsules}
-        nearestCapsule={nearestCapsule}
+        openedCapsules={capsules.filter(c => !c.isLocked).length}
+        nearestCapsule={
+          capsules
+            .filter(c => c.isLocked)
+            .sort(
+              (a, b) =>
+                new Date(a.openDate).getTime() - new Date(b.openDate).getTime(),
+            )[0]?.openDate
+        }
       />
-      <FilterBar
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-        onSearch={setSearchQuery}
+
+      <View style={styles.tabContainer}>
+        {tabs.map(tab => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tab, activeTab === tab && styles.activeTab]}
+            onPress={() => setActiveTab(tab)}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === tab && styles.activeTabText,
+              ]}>
+              {tab === 'personal'
+                ? 'Kişisel'
+                : tab === 'sent'
+                ? 'Gönderilen'
+                : 'Alınan'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <CapsuleList
+        capsules={categorizedCapsules[activeTab]}
+        onCapsulePress={capsuleId =>
+          navigation.navigate('CapsuleDetail', {capsuleId})
+        }
       />
-      {loading ? (
-        <View style={[styles.container, styles.centerContent]}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
-      ) : error ? (
-        <View style={[styles.container, styles.centerContent]}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      ) : capsules.length === 0 ? (
-        renderEmptyList()
-      ) : (
-        <FlatList
-          data={filteredCapsules}
-          keyExtractor={item => item.id}
-          renderItem={({item, index}) => (
-            <AnimatedCapsuleCard
-              capsule={item}
-              index={index}
-              onPress={() =>
-                navigation.navigate('CapsuleDetail', {capsuleId: item.id})
-              }
-            />
-          )}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={renderEmptyList}
-        />
-      )}
+
       <AnimatedFAB onPress={() => navigation.navigate('CreateCapsule')} />
     </View>
   );
@@ -146,41 +101,33 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1A1A4E',
   },
-  listContainer: {
-    padding: SPACING.sm,
-    paddingTop: SPACING.md,
-  },
   centerContent: {
     justifyContent: 'center',
     alignItems: 'center',
   },
-  errorText: {
-    color: COLORS.error,
-    fontSize: 16,
-    textAlign: 'center',
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(26, 26, 78, 0.98)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(108, 99, 255, 0.2)',
+    paddingHorizontal: SPACING.sm,
   },
-  emptyContainer: {
+  tab: {
     flex: 1,
-    justifyContent: 'center',
+    paddingVertical: SPACING.md,
     alignItems: 'center',
-    padding: SPACING.lg,
   },
-  emptyIconContainer: {
-    marginBottom: SPACING.md,
+  activeTab: {
+    borderBottomWidth: 3,
+    borderBottomColor: COLORS.primary,
   },
-  emptyIcon: {
-    fontSize: 64,
-  },
-  emptyText: {
-    fontSize: 18,
+  tabText: {
     color: COLORS.text.secondary,
-    textAlign: 'center',
-    marginBottom: SPACING.sm,
-  },
-  emptySubText: {
     fontSize: 14,
-    color: COLORS.text.light,
-    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  activeTabText: {
+    color: COLORS.primary,
   },
 });
 
