@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 import {
   View,
   StyleSheet,
@@ -22,7 +22,7 @@ import {useDispatch} from 'react-redux';
 import {format} from 'date-fns';
 import {tr} from 'date-fns/locale';
 import {COLORS, SPACING, LETTER_FONTS} from '../theme';
-import {addCapsule, saveCapsule} from '../store/capsuleSlice';
+import {addCapsule, saveCapsule, createCapsule} from '../store/capsuleSlice';
 import {Capsule, MediaContent, CapsuleCategory} from '../types';
 import MediaPicker from '../components/MediaPicker';
 import CustomDatePicker from '../components/CustomDatePicker';
@@ -30,6 +30,9 @@ import CapsuleAnimation from '../components/CapsuleAnimation';
 import RichTextEditor from '../components/RichTextEditor';
 import SealAnimation from '../components/SealAnimation';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import {DatabaseService} from '../services/firebase/database';
+import auth from '@react-native-firebase/auth';
+import {CustomAlert} from '../components/CustomAlert';
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
@@ -55,6 +58,9 @@ const CreateCapsuleScreen = () => {
   const [selectedCategory, setSelectedCategory] =
     useState<CapsuleCategory>('anı');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [recipientType, setRecipientType] = useState<'self' | 'other'>('self');
+  const [isCheckingUser, setIsCheckingUser] = useState(false);
+  const [userExists, setUserExists] = useState(false);
 
   const months = [
     'Ocak',
@@ -123,9 +129,101 @@ const CreateCapsuleScreen = () => {
     },
   ];
 
-  const handleCreateCapsule = () => {
-    setIsSubmitting(true);
-    setShowSealAnimation(true);
+  // E-posta değiştiğinde kullanıcı kontrolü
+  useEffect(() => {
+    const checkUser = async () => {
+      if (recipientType === 'other' && recipientEmail) {
+        setIsCheckingUser(true);
+        try {
+          const exists = await DatabaseService.checkUserExists(recipientEmail);
+          setUserExists(exists);
+        } catch (error) {
+          console.error('Kullanıcı kontrolü hatası:', error);
+        } finally {
+          setIsCheckingUser(false);
+        }
+      }
+    };
+
+    const debounceTimeout = setTimeout(checkUser, 500);
+    return () => clearTimeout(debounceTimeout);
+  }, [recipientEmail, recipientType]);
+
+  // Form doğrulama
+  const isFormValid = () => {
+    const basicValidation = title && description && openDate;
+    if (recipientType === 'self') {
+      return basicValidation;
+    }
+    return basicValidation && recipientEmail && userExists;
+  };
+
+  // Kapsül oluşturma
+  const handleCreateCapsule = async () => {
+    if (!isFormValid()) {
+      CustomAlert.show({
+        title: 'Hata',
+        message: 'Lütfen tüm gerekli alanları doldurun.',
+        icon: 'alert-circle',
+        buttons: [
+          {
+            text: 'Tamam',
+            style: 'primary',
+            onPress: () => CustomAlert.hide(),
+          },
+        ],
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setShowSealAnimation(true);
+
+      const capsuleData = {
+        title,
+        description,
+        content: type === 'text' ? content : '',
+        type,
+        mediaUrl: mediaContent?.uri,
+        mediaContent,
+        openDate: openDate.toISOString(),
+        isLocked: true,
+        recipientEmail:
+          recipientType === 'self' ? auth().currentUser?.email : recipientEmail,
+        category: selectedCategory,
+      };
+
+      const result = await dispatch(createCapsule(capsuleData)).unwrap();
+
+      if (result) {
+        // Başarılı oluşturma sonrası animasyonu göster
+        setShowAnimation(true);
+
+        // Animasyon bitiminde ana sayfaya dön
+        setTimeout(() => {
+          navigation.goBack();
+        }, 2000);
+      }
+    } catch (error: any) {
+      console.error('Kapsül oluşturma hatası:', error);
+
+      CustomAlert.show({
+        title: 'Hata',
+        message: error.message || 'Kapsül oluşturulurken bir hata oluştu.',
+        icon: 'alert-circle',
+        buttons: [
+          {
+            text: 'Tamam',
+            style: 'primary',
+            onPress: () => CustomAlert.hide(),
+          },
+        ],
+      });
+    } finally {
+      setIsSubmitting(false);
+      setShowSealAnimation(false);
+    }
   };
 
   const handleSealAnimationComplete = () => {
@@ -160,19 +258,6 @@ const CreateCapsuleScreen = () => {
   const handleDateConfirm = (date: Date) => {
     setOpenDate(date);
     setShowDatePicker(false);
-  };
-
-  const isFormValid = () => {
-    if (!title || !description) return false;
-
-    switch (type) {
-      case 'text':
-        return !!content || !!mediaContent;
-      case 'image':
-        return !!mediaContent;
-      default:
-        return false;
-    }
   };
 
   const animateInk = (x: number, y: number) => {
@@ -295,12 +380,59 @@ const CreateCapsuleScreen = () => {
                 Açılış Tarihi: {format(openDate, 'dd MMMM yyyy', {locale: tr})}
               </Button>
 
-              <TextInput
-                label="Alıcı E-posta (Opsiyonel)"
-                value={recipientEmail}
-                onChangeText={setRecipientEmail}
-                style={styles.emailInput}
-              />
+              <View style={styles.recipientSection}>
+                <Text style={styles.sectionTitle}>Kapsül Alıcısı</Text>
+                <SegmentedButtons
+                  value={recipientType}
+                  onValueChange={value =>
+                    setRecipientType(value as 'self' | 'other')
+                  }
+                  buttons={[
+                    {
+                      value: 'self',
+                      label: 'Kendime',
+                      icon: 'account',
+                    },
+                    {
+                      value: 'other',
+                      label: 'Başkasına',
+                      icon: 'account-arrow-right',
+                    },
+                  ]}
+                />
+
+                {recipientType === 'other' && (
+                  <View style={styles.emailInputContainer}>
+                    <TextInput
+                      label="Alıcı E-posta"
+                      value={recipientEmail}
+                      onChangeText={setRecipientEmail}
+                      error={recipientEmail && !userExists}
+                      disabled={isCheckingUser}
+                      right={
+                        recipientEmail && (
+                          <TextInput.Icon
+                            icon={
+                              isCheckingUser
+                                ? 'loading'
+                                : userExists
+                                ? 'check'
+                                : 'alert'
+                            }
+                            color={userExists ? COLORS.success : COLORS.error}
+                          />
+                        )
+                      }
+                    />
+                    {recipientEmail && !userExists && (
+                      <Text style={styles.errorText}>
+                        Böyle bir kullanıcı bulunamadı. Lütfen geçerli bir
+                        e-posta adresi girin.
+                      </Text>
+                    )}
+                  </View>
+                )}
+              </View>
 
               <Text style={styles.label}>Kategori</Text>
               <View style={styles.categoryContainer}>
@@ -512,6 +644,23 @@ const styles = StyleSheet.create({
   disabledSurface: {
     opacity: 0.7,
     pointerEvents: 'none',
+  },
+  recipientSection: {
+    marginVertical: SPACING.md,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.text.primary,
+    marginBottom: SPACING.sm,
+  },
+  emailInputContainer: {
+    marginTop: SPACING.md,
+  },
+  errorText: {
+    color: COLORS.error,
+    fontSize: 12,
+    marginTop: SPACING.xs,
   },
 });
 

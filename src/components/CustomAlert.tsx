@@ -34,15 +34,17 @@ let alertInstance: {
 
 const CustomAlertComponent = () => {
   const [visible, setVisible] = React.useState(false);
-  const [config, setConfig] = React.useState<Omit<CustomAlertProps, 'visible'>>({
-    title: '',
-    message: '',
-    buttons: [],
-  });
+  const [config, setConfig] = React.useState<Omit<CustomAlertProps, 'visible'>>(
+    {
+      title: '',
+      message: '',
+      buttons: [],
+    },
+  );
 
   React.useEffect(() => {
     alertInstance = {
-      show: (options) => {
+      show: options => {
         setConfig(options);
         setVisible(true);
       },
@@ -146,10 +148,14 @@ const CustomAlertComponent = () => {
 
 export const CustomAlert = {
   show: (options: Omit<CustomAlertProps, 'visible'>) => {
-    alertInstance?.show(options);
+    if (alertInstance) {
+      alertInstance.show(options);
+    }
   },
   hide: () => {
-    alertInstance?.hide();
+    if (alertInstance) {
+      alertInstance.hide();
+    }
   },
 };
 
@@ -231,4 +237,4 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontSize: 16,
   },
-}); 
+});
