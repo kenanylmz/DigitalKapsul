@@ -130,25 +130,48 @@ const CreateCapsuleScreen = () => {
     },
   ];
 
-  // E-posta değiştiğinde kullanıcı kontrolü
-  useEffect(() => {
-    const checkUser = async () => {
-      if (recipientType === 'other' && recipientEmail) {
-        setIsCheckingUser(true);
-        try {
-          const exists = await DatabaseService.checkUserExists(recipientEmail);
-          setUserExists(exists);
-        } catch (error) {
-          console.error('Kullanıcı kontrolü hatası:', error);
-        } finally {
-          setIsCheckingUser(false);
-        }
-      }
-    };
+  // E-posta kontrolü için useEffect'i kaldıralım
+  // ve yerine yeni bir fonksiyon ekleyelim
+  const checkRecipientEmail = async () => {
+    if (!recipientEmail) {
+      CustomAlert.show({
+        title: 'Hata',
+        message: 'Lütfen bir e-posta adresi girin.',
+      });
+      return;
+    }
 
-    const debounceTimeout = setTimeout(checkUser, 500);
-    return () => clearTimeout(debounceTimeout);
-  }, [recipientEmail, recipientType]);
+    // E-posta formatı kontrolü
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(recipientEmail)) {
+      CustomAlert.show({
+        title: 'Hata',
+        message: 'Lütfen geçerli bir e-posta adresi girin.',
+      });
+      return;
+    }
+
+    setIsCheckingUser(true);
+    try {
+      const exists = await DatabaseService.checkUserExists(recipientEmail);
+      setUserExists(exists);
+
+      if (!exists) {
+        CustomAlert.show({
+          title: 'Hata',
+          message: 'Bu e-posta adresine sahip bir kullanıcı bulunamadı.',
+        });
+      }
+    } catch (error) {
+      console.error('Kullanıcı kontrolü hatası:', error);
+      CustomAlert.show({
+        title: 'Hata',
+        message: 'Kullanıcı kontrolü sırasında bir hata oluştu.',
+      });
+    } finally {
+      setIsCheckingUser(false);
+    }
+  };
 
   // Form doğrulama
   const isFormValid = () => {
@@ -373,32 +396,24 @@ const CreateCapsuleScreen = () => {
                 />
 
                 {recipientType === 'other' && (
-                  <View style={styles.emailInputContainer}>
+                  <View style={styles.recipientContainer}>
                     <TextInput
                       label="Alıcı E-posta"
                       value={recipientEmail}
                       onChangeText={setRecipientEmail}
-                      error={recipientEmail && !userExists}
+                      error={recipientEmail !== '' && !userExists}
                       disabled={isCheckingUser}
                       right={
-                        recipientEmail && (
-                          <TextInput.Icon
-                            icon={
-                              isCheckingUser
-                                ? 'loading'
-                                : userExists
-                                ? 'check'
-                                : 'alert'
-                            }
-                            color={userExists ? COLORS.success : COLORS.error}
-                          />
-                        )
+                        <TextInput.Icon
+                          icon={isCheckingUser ? 'loading' : 'account-search'}
+                          disabled={!recipientEmail || isCheckingUser}
+                          onPress={checkRecipientEmail}
+                        />
                       }
                     />
-                    {recipientEmail && !userExists && (
+                    {recipientEmail !== '' && !userExists && (
                       <Text style={styles.errorText}>
-                        Böyle bir kullanıcı bulunamadı. Lütfen geçerli bir
-                        e-posta adresi girin.
+                        Kullanıcı bulunamadı veya e-posta doğrulanmadı
                       </Text>
                     )}
                   </View>
@@ -625,13 +640,14 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
     marginBottom: SPACING.sm,
   },
-  emailInputContainer: {
-    marginTop: SPACING.md,
+  recipientContainer: {
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.md,
   },
   errorText: {
     color: COLORS.error,
     fontSize: 12,
-    marginTop: SPACING.xs,
+    marginTop: 4,
   },
 });
 
