@@ -108,12 +108,57 @@ const CapsuleDetailScreen = ({route, navigation}) => {
     );
   };
 
-  const canOpen = new Date(capsule.openDate) <= new Date();
-
   const handleOpenCapsule = () => {
-    if (canOpen) {
-      setShowAnimation(true);
+    if (capsule.capsuleType === 'sent') {
+      CustomAlert.show({
+        title: 'Kapsül Açılamaz',
+        message:
+          'Bu kapsül başka bir kullanıcıya gönderilmiştir ve sadece alıcı tarafından açılabilir.',
+        icon: 'lock',
+        buttons: [
+          {
+            text: 'Tamam',
+            style: 'primary',
+            onPress: () => CustomAlert.hide(),
+          },
+        ],
+      });
+      return;
     }
+
+    const openDate = new Date(capsule.openDate);
+    const now = new Date();
+
+    if (openDate > now) {
+      const remainingDays = Math.ceil(
+        (openDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      CustomAlert.show({
+        title: 'Kapsül Henüz Açılamaz',
+        message: `Bu kapsül ${remainingDays} gün sonra açılabilir.`,
+        icon: 'timer-sand',
+        buttons: [
+          {
+            text: 'Tamam',
+            style: 'primary',
+            onPress: () => CustomAlert.hide(),
+          },
+        ],
+      });
+      return;
+    }
+
+    setShowAnimation(true);
+  };
+
+  const isOpenable = () => {
+    if (capsule.capsuleType === 'sent') return false;
+    if (!capsule.isLocked) return false;
+
+    const openDate = new Date(capsule.openDate);
+    const now = new Date();
+    return openDate <= now;
   };
 
   return (
@@ -225,16 +270,29 @@ const CapsuleDetailScreen = ({route, navigation}) => {
             )}
 
             <View style={styles.buttonContainer}>
-              {capsule.isLocked && (
+              {capsule.isLocked ? (
                 <Button
                   mode="contained"
                   onPress={handleOpenCapsule}
                   style={styles.button}
-                  disabled={!canOpen}
-                  labelStyle={
-                    !canOpen ? styles.disabledButtonLabel : undefined
+                  disabled={!isOpenable()}
+                  labelStyle={styles.buttonLabel}
+                  icon={
+                    capsule.capsuleType === 'sent'
+                      ? 'lock'
+                      : 'lock-open-variant'
                   }>
-                  {canOpen ? 'Kapsülü Aç' : 'Henüz Açılamaz'}
+                  {capsule.capsuleType === 'sent'
+                    ? 'Bu kapsül alıcı tarafından açılabilir'
+                    : 'Kapsülü Aç'}
+                </Button>
+              ) : (
+                <Button
+                  mode="contained"
+                  onPress={() => navigation.navigate('OpenCapsule', {capsule})}
+                  style={styles.button}
+                  icon="eye">
+                  Kapsülü Görüntüle
                 </Button>
               )}
               <Button
@@ -420,6 +478,9 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   disabledButtonLabel: {
+    color: COLORS.white,
+  },
+  buttonLabel: {
     color: COLORS.white,
   },
 });

@@ -251,4 +251,37 @@ export const DatabaseService = {
       throw error;
     }
   },
+
+  // Kullanıcı hesabını silme fonksiyonu
+  deleteUserAccount: async () => {
+    try {
+      const user = auth().currentUser;
+      if (!user) throw new Error('Kullanıcı bulunamadı');
+
+      // Kullanıcının tüm kapsüllerini al
+      const userCapsules = await DatabaseService.getUserCapsules();
+
+      const updates: {[key: string]: null} = {};
+
+      // Kullanıcının tüm verilerini sil
+      updates[`users/${user.uid}`] = null;
+
+      // Kullanıcının kapsüllerini sil
+      userCapsules.forEach(capsule => {
+        updates[`capsules/${capsule.id}`] = null;
+      });
+
+      // Realtime Database'den kullanıcı verilerini sil
+      await database().ref().update(updates);
+
+      // Firebase Authentication'dan kullanıcıyı sil
+      await user.delete();
+
+      // Çıkış yap
+      await auth().signOut();
+    } catch (error) {
+      console.error('Hesap silme hatası:', error);
+      throw error;
+    }
+  },
 };
