@@ -325,44 +325,14 @@ const CreateCapsuleScreen = () => {
                 editable={!isSubmitting}
               />
 
-              <SegmentedButtons
-                value={type}
-                onValueChange={value =>
-                  !isSubmitting && setType(value as 'text' | 'image')
-                }
-                buttons={[
-                  {
-                    value: 'text',
-                    label: 'Metin',
-                    icon: 'text-box-outline',
-                    disabled: isSubmitting,
-                  },
-                  {
-                    value: 'image',
-                    label: 'Resim',
-                    icon: 'image',
-                    disabled: isSubmitting,
-                  },
-                ]}
-                style={styles.segmentedButton}
-              />
-
               <View style={styles.contentWrapper}>
-                {type === 'text' ? (
-                  <View style={styles.letterContent}>
-                    <RichTextEditor
-                      value={content}
-                      onChangeText={setContent}
-                      onSelectionChange={(x, y) => animateInk(x, y)}
-                    />
-                  </View>
-                ) : (
-                  <MediaPicker
-                    type={type}
-                    value={mediaContent}
-                    onChange={setMediaContent}
+                <View style={styles.letterContent}>
+                  <RichTextEditor
+                    value={content}
+                    onChangeText={setContent}
+                    onSelectionChange={(x, y) => animateInk(x, y)}
                   />
-                )}
+                </View>
               </View>
 
               <Button
