@@ -92,24 +92,15 @@ export const DatabaseService = {
       // Ana kapsül verisini kaydet
       updates[`capsules/${capsuleId}`] = capsule;
 
-      if (capsule.capsuleType === 'self') {
-        // Kendine gönderilen kapsül
+      // Kapsül tipine göre referansları güncelle
+      if (capsule.capsuleType === 'sent' && capsule.recipientEmail) {
+        // Gönderen kullanıcının gönderilen klasörüne ekle
         updates[`users/${user.uid}/sentCapsules/${capsuleId}`] = {
           createdAt: capsule.createdAt,
-          type: capsule.type,
-        };
-        updates[`users/${user.uid}/receivedCapsules/${capsuleId}`] = {
-          createdAt: capsule.createdAt,
-          type: capsule.type,
-        };
-      } else if (capsule.capsuleType === 'sent' && capsule.recipientEmail) {
-        // Başkasına gönderilen kapsül
-        updates[`users/${user.uid}/sentCapsules/${capsuleId}`] = {
-          createdAt: capsule.createdAt,
-          type: capsule.type,
+          type: 'sent',
         };
 
-        // Alıcıyı bul
+        // Alıcı kullanıcıyı bul ve alınan klasörüne ekle
         const recipientSnapshot = await database()
           .ref('users')
           .orderByChild('profile/email')
@@ -121,12 +112,18 @@ export const DatabaseService = {
           const recipientId = Object.keys(recipientData)[0];
           updates[`users/${recipientId}/receivedCapsules/${capsuleId}`] = {
             createdAt: capsule.createdAt,
-            type: capsule.type,
+            type: 'received',
           };
         }
+      } else {
+        // Kişisel kapsül için kullanıcının kendi klasörüne ekle
+        updates[`users/${user.uid}/personalCapsules/${capsuleId}`] = {
+          createdAt: capsule.createdAt,
+          type: 'self',
+        };
       }
 
-      // Tüm güncellemeleri tek seferde yap
+      // Tüm güncellemeleri tek seferde uygula
       await database().ref().update(updates);
 
       return capsule;
@@ -142,23 +139,47 @@ export const DatabaseService = {
       const user = auth().currentUser;
       if (!user) throw new Error('Kullanıcı bulunamadı');
 
-      // Gönderilen ve alınan kapsülleri al
-      const [sentSnapshot, receivedSnapshot] = await Promise.all([
-        database().ref(`users/${user.uid}/sentCapsules`).once('value'),
-        database().ref(`users/${user.uid}/receivedCapsules`).once('value'),
-      ]);
+      // Tüm kapsül tiplerini al
+      const [personalSnapshot, sentSnapshot, receivedSnapshot] =
+        await Promise.all([
+          database().ref(`users/${user.uid}/personalCapsules`).once('value'),
+          database().ref(`users/${user.uid}/sentCapsules`).once('value'),
+          database().ref(`users/${user.uid}/receivedCapsules`).once('value'),
+        ]);
 
-      const capsuleIds = new Set([
-        ...Object.keys(sentSnapshot.val() || {}),
-        ...Object.keys(receivedSnapshot.val() || {}),
-      ]);
+      // Kapsül ID'lerini topla ve tiplerini belirle
+      const capsuleRefs = new Map();
 
+      // Kişisel kapsüller
+      Object.entries(personalSnapshot.val() || {}).forEach(([id]) => {
+        capsuleRefs.set(id, 'self');
+      });
+
+      // Gönderilen kapsüller
+      Object.entries(sentSnapshot.val() || {}).forEach(([id]) => {
+        capsuleRefs.set(id, 'sent');
+      });
+
+      // Alınan kapsüller
+      Object.entries(receivedSnapshot.val() || {}).forEach(([id]) => {
+        capsuleRefs.set(id, 'received');
+      });
+
+      // Kapsül verilerini getir ve tiplerini ayarla
       const capsules = await Promise.all(
-        Array.from(capsuleIds).map(async id => {
+        Array.from(capsuleRefs.entries()).map(async ([id, type]) => {
           const capsuleSnapshot = await database()
             .ref(`capsules/${id}`)
             .once('value');
-          return capsuleSnapshot.val();
+          const capsuleData = capsuleSnapshot.val();
+
+          if (capsuleData) {
+            return {
+              ...capsuleData,
+              capsuleType: type,
+            };
+          }
+          return null;
         }),
       );
 

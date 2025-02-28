@@ -1,5 +1,6 @@
 import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
 import {DatabaseService} from '../services/firebase/database';
+import {Capsule, CapsuleCategory} from '../types';
 
 export interface Capsule {
   id: string;
@@ -36,8 +37,17 @@ export const createCapsule = createAsyncThunk<Capsule, Omit<Capsule, 'id'>>(
   async (capsuleData, {rejectWithValue}) => {
     try {
       // Eksik alanları kontrol et
-      if (!capsuleData.capsuleType || !capsuleData.createdAt) {
+      if (
+        !capsuleData.title ||
+        !capsuleData.capsuleType ||
+        !capsuleData.createdAt
+      ) {
         throw new Error('Gerekli alanlar eksik');
+      }
+
+      // capsuleType kontrolü
+      if (!['self', 'sent', 'received'].includes(capsuleData.capsuleType)) {
+        throw new Error('Geçersiz kapsül tipi');
       }
 
       const result = await DatabaseService.createCapsule(capsuleData);
@@ -52,14 +62,19 @@ export const createCapsule = createAsyncThunk<Capsule, Omit<Capsule, 'id'>>(
 
 export const loadCapsules = createAsyncThunk<Capsule[], void>(
   'capsules/load',
-  async () => {
-    return await DatabaseService.getUserCapsules();
+  async (_, {rejectWithValue}) => {
+    try {
+      const capsules = await DatabaseService.getUserCapsules();
+      return capsules;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Kapsüller yüklenemedi');
+    }
   },
 );
 
-export const updateCapsule = createAsyncThunk(
+export const updateCapsule = createAsyncThunk<Capsule, Capsule>(
   'capsules/update',
-  async (capsule: Capsule, {rejectWithValue}) => {
+  async (capsule, {rejectWithValue}) => {
     try {
       const result = await DatabaseService.updateCapsule(capsule);
       return result;
@@ -69,9 +84,9 @@ export const updateCapsule = createAsyncThunk(
   },
 );
 
-export const deleteCapsule = createAsyncThunk(
+export const deleteCapsule = createAsyncThunk<string, string>(
   'capsules/delete',
-  async (capsuleId: string, {rejectWithValue}) => {
+  async (capsuleId, {rejectWithValue}) => {
     try {
       await DatabaseService.deleteCapsule(capsuleId);
       return capsuleId;
@@ -84,7 +99,9 @@ export const deleteCapsule = createAsyncThunk(
 const capsuleSlice = createSlice({
   name: 'capsules',
   initialState,
-  reducers: {},
+  reducers: {
+    // Gerekirse burada senkron reducer'lar eklenebilir
+  },
   extraReducers: builder => {
     builder
       // Load capsules
@@ -95,6 +112,7 @@ const capsuleSlice = createSlice({
       .addCase(loadCapsules.fulfilled, (state, action) => {
         state.loading = false;
         state.items = action.payload;
+        state.error = null;
       })
       .addCase(loadCapsules.rejected, (state, action) => {
         state.loading = false;
