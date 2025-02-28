@@ -72,3 +72,26 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Keystore files
+*.keystore
+*.jks
+
+# Environment variables
+.env
+.env.*
+
+# Google Services
+google-services.json
+
+# Other sensitive files
+android/app/release/
+android/app/debug/
+android/app/src/main/assets/index.android.bundle
+android/app/src/main/res/raw/
+android/app/google-services.json
+ios/GoogleService-Info.plist
+
+# Gradle properties with sensitive data
+android/gradle.properties
+android/local.properties

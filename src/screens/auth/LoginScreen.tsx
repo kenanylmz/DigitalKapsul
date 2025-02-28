@@ -59,7 +59,12 @@ const LoginScreen = () => {
 
           <View style={styles.form}>
             <View style={styles.inputWrapper}>
-              <Icon name="email" size={20} color={COLORS.primary} style={styles.inputIcon} />
+              <Icon
+                name="email"
+                size={20}
+                color={COLORS.primary}
+                style={styles.inputIcon}
+              />
               <TextInput
                 placeholder="E-posta"
                 value={email}
@@ -72,7 +77,12 @@ const LoginScreen = () => {
             </View>
 
             <View style={styles.inputWrapper}>
-              <Icon name="lock" size={20} color={COLORS.primary} style={styles.inputIcon} />
+              <Icon
+                name="lock"
+                size={20}
+                color={COLORS.primary}
+                style={styles.inputIcon}
+              />
               <TextInput
                 placeholder="Şifre"
                 value={password}
@@ -81,7 +91,9 @@ const LoginScreen = () => {
                 style={styles.input}
                 placeholderTextColor="rgba(255,255,255,0.5)"
               />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeIcon}>
                 <Icon
                   name={showPassword ? 'eye-off' : 'eye'}
                   size={20}
@@ -202,4 +214,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LoginScreen; 
+export default LoginScreen;

@@ -2,15 +2,15 @@ import auth from '@react-native-firebase/auth';
 import firebase from '@react-native-firebase/app';
 import database from '@react-native-firebase/database';
 
+// Firebase yapılandırma bilgilerini .env'den al
 const firebaseConfig = {
-  apiKey: 'AIzaSyDHE9R4lunJ8waaAWSZiqVQfZzpKoGsGOw',
-  authDomain: 'digital-kapsul-5d705.firebaseapp.com',
-  projectId: 'digital-kapsul-5d705',
-  storageBucket: 'digital-kapsul-5d705.appspot.com',
-  messagingSenderId: '899219294135',
-  appId: '1:899219294135:android:fe300902d7ae903de50a32',
-  databaseURL:
-    'https://digital-kapsul-5d705-default-rtdb.europe-west1.firebasedatabase.app',
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID,
+  databaseURL: process.env.FIREBASE_DATABASE_URL,
 };
 
 if (!firebase.apps.length) {
